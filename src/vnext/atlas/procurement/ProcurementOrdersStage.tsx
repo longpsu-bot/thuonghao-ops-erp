@@ -81,6 +81,7 @@ export function ProcurementOrdersStage({
   authSubject,
   schoolDispatchApi,
   onOpenPxk,
+  onOpenAllocation,
 }: {
   data: PurchaseOrdersData | null;
   disabled: boolean;
@@ -94,6 +95,7 @@ export function ProcurementOrdersStage({
   authSubject?: string | null;
   schoolDispatchApi?: ProcurementPxkImpactProps["api"];
   onOpenPxk?: ProcurementPxkImpactProps["onOpenPxk"];
+  onOpenAllocation?: () => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null | undefined>(
     undefined,
@@ -211,6 +213,41 @@ export function ProcurementOrdersStage({
       )
     : [];
   if (!data) return null;
+  const scopeWarnings = procurementOperatorMessages(
+    [...(data.blockers ?? []), ...(data.warnings ?? [])],
+    "Có điều kiện cần kiểm tra trước khi tiếp tục.",
+  ).map((message) => (
+    <Text key={message} px="md" pb="sm" color="status.warning">
+      <Icon asChild aria-hidden="true" mr="xs">
+        <WarningCircle />
+      </Icon>
+      {message}
+    </Text>
+  ));
+  if (data.purchase_orders.length === 0)
+    return (
+      <Box>
+        {scopeWarnings}
+        <Box p="md">
+          <Text textStyle="label">Chưa có đơn mua trong khoảng ngày này.</Text>
+          {onOpenAllocation && (
+            <>
+              <Text my="sm">
+                Để lập đơn, kiểm tra phân bổ của ngày cần mua rồi chọn “Chuẩn bị
+                đơn mua”.
+              </Text>
+              <Button
+                variant="secondary"
+                disabled={disabled}
+                onClick={onOpenAllocation}
+              >
+                Mở Phân bổ NCC
+              </Button>
+            </>
+          )}
+        </Box>
+      </Box>
+    );
   return (
     <Box>
       <AtlasWorkbar
@@ -348,17 +385,7 @@ export function ProcurementOrdersStage({
           {exportError}
         </Text>
       )}
-      {procurementOperatorMessages(
-        [...(data?.blockers ?? []), ...(data?.warnings ?? [])],
-        "Có điều kiện cần kiểm tra trước khi tiếp tục.",
-      ).map((message) => (
-        <Text key={message} px="md" pb="sm" color="status.warning">
-          <Icon asChild aria-hidden="true" mr="xs">
-            <WarningCircle />
-          </Icon>
-          {message}
-        </Text>
-      ))}
+      {scopeWarnings}
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
@@ -797,7 +824,7 @@ export function ProcurementOrdersStage({
           <Text p="lg" color="fg.muted">
             {visible.length
               ? "Chọn một đơn mua để xem nội dung và thao tác."
-              : "Các đơn đã phát hành vẫn được giữ trong lịch sử. Kiểm tra phạm vi ngày hoặc tìm kiếm; chưa có đơn không có nghĩa là nhu cầu bằng không."}
+              : "Thử từ khóa khác hoặc xóa nội dung tìm kiếm để xem các đơn đã tải."}
           </Text>
         )}
       </Grid>

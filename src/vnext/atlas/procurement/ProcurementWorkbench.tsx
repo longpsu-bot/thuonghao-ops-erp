@@ -65,6 +65,7 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
     };
     schoolDispatchApi?: ProcurementPxkImpactProps["api"];
     onOpenPxk?: ProcurementPxkImpactProps["onOpenPxk"];
+    onOpenAllocation?: (range: AtlasOperatorDateRange) => void;
     schools?: ProcurementSchoolOption[];
     onExportXlsx?: ProcurementExport;
     onExportPdf?: ProcurementExport;
@@ -808,6 +809,19 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               ) : (
                 <ProcurementOrdersStage
                   data={controller.orders}
+                  onOpenAllocation={
+                    props.ownerStage
+                      ? props.onOpenAllocation &&
+                        (() =>
+                          props.onOpenAllocation!({
+                            start: controller.date,
+                            end: controller.dateEnd,
+                          }))
+                      : () => {
+                          setSearch("");
+                          controller.changeStage("allocation");
+                        }
+                  }
                   disabled={controller.stale || commandDisabled}
                   search={search}
                   onAction={(order) => void controller.orderAction(order)}

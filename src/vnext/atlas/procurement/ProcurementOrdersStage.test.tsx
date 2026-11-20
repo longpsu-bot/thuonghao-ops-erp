@@ -43,6 +43,37 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("shows an allocation shortcut only when the loaded date range has no orders", () => {
+    const { orders } = createProcurementReviewFixture("po_draft");
+    const navigate = vi.fn();
+    const command = vi.fn();
+    const view = (data: typeof orders, search: string) => (
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={data}
+          search={search}
+          disabled={false}
+          onAction={command}
+          onOpenAllocation={navigate}
+          onReleaseAll={command}
+        />
+      </AtlasVNextProvider>
+    );
+    const { rerender } = render(view({ ...orders, purchase_orders: [] }, ""));
+    fireEvent.click(screen.getByRole("button", { name: "Mở Phân bổ NCC" }));
+    expect(navigate).toHaveBeenCalledOnce();
+    expect(command).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: /Phát hành tất cả/ }),
+    ).not.toBeInTheDocument();
+    rerender(view(orders, "no such supplier"));
+    expect(
+      screen.getByText("Không có đơn mua khớp tìm kiếm trong phạm vi này."),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Mở Phân bổ NCC" }),
+    ).not.toBeInTheDocument();
+  });
   it("replaces the narrow directory with the selected PO and restores focus only after Close reveals it", () => {
     const fixture = createProcurementReviewFixture("po_draft");
     render(

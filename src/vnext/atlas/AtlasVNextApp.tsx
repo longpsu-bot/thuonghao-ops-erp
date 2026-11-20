@@ -425,6 +425,20 @@ function ApplicationSession(props: AtlasVNextAppProps) {
                 freshnessRevision={freshness[id] ?? 0}
                 onServiceDateChange={reportDate}
                 onContinueAllocation={continueAllocation}
+                onOpenAllocation={(range) => {
+                  const retained =
+                    entries.current!.has("procurement") &&
+                    procurementContext.current?.range;
+                  if (!open("procurement", range.start, range)) return;
+                  if (
+                    retained &&
+                    (range.start !== retained.start ||
+                      range.end !== retained.end)
+                  )
+                    setNotice(
+                      `Phân bổ NCC đang mở cho ${retained.start} → ${retained.end}. Khoảng ngày bên Đơn mua là ${range.start} → ${range.end}.`,
+                    );
+                }}
                 onOpenOrders={openOrders}
                 onOpenPxk={openPxk}
                 onOpenChangeOrders={openChangeOrders}
