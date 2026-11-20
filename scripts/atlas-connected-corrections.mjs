@@ -200,6 +200,9 @@ export async function certifyConnectedCorrections({
         source: row.source_row_reference,
       }))
       .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  const schoolRanks = new Map(
+    activeSchools.map((school) => [school.school_id, school.display_order]),
+  );
   const expectedReview = expectedRows
     .filter((row) => {
       const old = previousByPair.get(pair(row));
@@ -211,8 +214,8 @@ export async function certifyConnectedCorrections({
     })
     .sort(
       (a, b) =>
-        a.service_date.localeCompare(b.service_date) ||
-        a.school_id.localeCompare(b.school_id),
+        schoolRanks.get(a.school_id) - schoolRanks.get(b.school_id) ||
+        a.service_date.localeCompare(b.service_date),
     )
     .map((row) => {
       const old = previousByPair.get(pair(row));
