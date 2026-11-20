@@ -9,7 +9,7 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { useRef } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   exactQuantityDisplay,
   normalizeConfirmedNeedQuantity,
@@ -17,10 +17,17 @@ import {
 import type { useConfirmedNeedWorkbench } from "./useConfirmedNeedWorkbench";
 type Controller = ReturnType<typeof useConfirmedNeedWorkbench>;
 
-export function ConfirmedNeedCorrectionPanel({ c }: { c: Controller }) {
+export function ConfirmedNeedCorrectionPanel({
+  c,
+  children,
+}: {
+  c: Controller;
+  children?: ReactNode;
+}) {
+  const [historyOpen, setHistoryOpen] = useState(false);
   if (!c.released && !c.correctionRead) return null;
   return (
-    <Box px="md" pb="sm">
+    <Box px="md">
       {c.correctionMode ? (
         <Box
           borderWidth="var(--atlas-layout-edge, 1px)"
@@ -72,108 +79,129 @@ export function ConfirmedNeedCorrectionPanel({ c }: { c: Controller }) {
         </Text>
       )}
       {c.correctionRead && (
-        <Box as="details" mt="sm">
-          <Box
-            as="summary"
-            cursor="var(--atlas-disclosure-cursor, pointer)"
-            textStyle="helper"
+        <Box pb="xs">
+          <details
+            onToggle={(event) => setHistoryOpen(event.currentTarget.open)}
           >
-            Nguồn và lịch sử xác nhận, điều chỉnh
-          </Box>
-          <Text textStyle="helper" mt="sm" overflowWrap="anywhere">
-            Lần phát hành gốc:{" "}
-            {c.correctionRead.binding.expected_confirmed_need_release_id}
-          </Text>
-          <Text textStyle="helper" overflowWrap="anywhere">
-            Bàn giao gốc:{" "}
-            {c.correctionRead.binding.expected_purchase_handoff_revision_id ??
-              "Chưa có bàn giao"}
-          </Text>
-          <Box overflowX="auto" mt="sm">
-            <Table.Root size="sm" aria-label="Lịch sử xác nhận và điều chỉnh">
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader>Trường / nguyên liệu</Table.ColumnHeader>
-                  <Table.ColumnHeader>Trước → sau</Table.ColumnHeader>
-                  <Table.ColumnHeader>Chênh lệch</Table.ColumnHeader>
-                  <Table.ColumnHeader>
-                    Lý do / người ghi nhận
-                  </Table.ColumnHeader>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {c.correctionRead.lines.map((evidence) => {
-                  const line = c.workbench?.lines.find(
-                    (item) =>
-                      item.confirmed_need_line_id ===
-                      evidence.confirmed_need_line_id,
-                  );
-                  return (
-                    <Table.Row key={evidence.confirmed_need_line_id}>
-                      <Table.Cell>
-                        {line
-                          ? `${line.school.name} · ${line.ingredient.name}`
-                          : evidence.confirmed_need_line_id}
-                      </Table.Cell>
-                      <Table.Cell whiteSpace="nowrap">
-                        {evidence.old_confirmed_quantity === null
-                          ? "—"
-                          : exactQuantityDisplay(
-                              evidence.old_confirmed_quantity,
-                            )}{" "}
-                        →{" "}
-                        {exactQuantityDisplay(evidence.new_confirmed_quantity)}{" "}
-                        {line
-                          ? confirmedNeedUnitLabel(line.controlled_unit)
-                          : ""}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {evidence.difference === null
-                          ? "—"
-                          : exactQuantityDisplay(evidence.difference)}
-                      </Table.Cell>
-                      <Table.Cell minW="var(--atlas-correction-evidence-width, 220px)">
-                        <Text>
-                          {evidence.reason_note ?? "Không có ghi chú"}
-                        </Text>
-                        <Box as="details" textStyle="helper">
-                          <Box
-                            as="summary"
-                            cursor="var(--atlas-disclosure-cursor, pointer)"
-                          >
-                            Người ghi nhận và dấu vết
-                          </Box>
-                          <Text overflowWrap="anywhere">
-                            {evidence.decided_by_actor_id ?? "—"} ·{" "}
-                            {evidence.decided_at
-                              ? new Date(evidence.decided_at).toLocaleString(
-                                  "vi-VN",
-                                  { timeZone: "Asia/Ho_Chi_Minh" },
-                                )
-                              : "—"}
-                          </Text>
-                          <Text overflowWrap="anywhere">
-                            Quyết định: {evidence.current_decision_id ?? "—"}
-                          </Text>
-                          <Text overflowWrap="anywhere">
-                            Quyết định trước:{" "}
-                            {evidence.predecessor_decision_id ?? "—"}
-                          </Text>
-                          <Text overflowWrap="anywhere">
-                            Phiên bản dòng: {evidence.current_revision_id}
-                          </Text>
-                          <Text overflowWrap="anywhere">
-                            Phiên bản trước:{" "}
-                            {evidence.predecessor_revision_id ?? "—"}
-                          </Text>
-                        </Box>
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })}
-              </Table.Body>
-            </Table.Root>
-          </Box>
+            <Box
+              as="summary"
+              cursor="var(--atlas-disclosure-cursor, pointer)"
+              textStyle="helper"
+              color="fg.primary"
+              w="var(--atlas-disclosure-width, fit-content)"
+            >
+              Lịch sử xác nhận{children ? " và đơn mua" : ""}
+            </Box>
+            {historyOpen && (
+              <>
+                {children}
+                <Text textStyle="helper" mt="sm" overflowWrap="anywhere">
+                  Lần phát hành gốc:{" "}
+                  {c.correctionRead.binding.expected_confirmed_need_release_id}
+                </Text>
+                <Text textStyle="helper" overflowWrap="anywhere">
+                  Bàn giao gốc:{" "}
+                  {c.correctionRead.binding
+                    .expected_purchase_handoff_revision_id ??
+                    "Chưa có bàn giao"}
+                </Text>
+                <Box overflowX="auto" mt="sm">
+                  <Table.Root
+                    size="sm"
+                    aria-label="Lịch sử xác nhận và điều chỉnh"
+                  >
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.ColumnHeader>
+                          Trường / nguyên liệu
+                        </Table.ColumnHeader>
+                        <Table.ColumnHeader>Trước → sau</Table.ColumnHeader>
+                        <Table.ColumnHeader>Chênh lệch</Table.ColumnHeader>
+                        <Table.ColumnHeader>
+                          Lý do / người ghi nhận
+                        </Table.ColumnHeader>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {c.correctionRead.lines.map((evidence) => {
+                        const line = c.workbench?.lines.find(
+                          (item) =>
+                            item.confirmed_need_line_id ===
+                            evidence.confirmed_need_line_id,
+                        );
+                        return (
+                          <Table.Row key={evidence.confirmed_need_line_id}>
+                            <Table.Cell>
+                              {line
+                                ? `${line.school.name} · ${line.ingredient.name}`
+                                : evidence.confirmed_need_line_id}
+                            </Table.Cell>
+                            <Table.Cell whiteSpace="nowrap">
+                              {evidence.old_confirmed_quantity === null
+                                ? "—"
+                                : exactQuantityDisplay(
+                                    evidence.old_confirmed_quantity,
+                                  )}{" "}
+                              →{" "}
+                              {exactQuantityDisplay(
+                                evidence.new_confirmed_quantity,
+                              )}{" "}
+                              {line
+                                ? confirmedNeedUnitLabel(line.controlled_unit)
+                                : ""}
+                            </Table.Cell>
+                            <Table.Cell>
+                              {evidence.difference === null
+                                ? "—"
+                                : exactQuantityDisplay(evidence.difference)}
+                            </Table.Cell>
+                            <Table.Cell minW="var(--atlas-correction-evidence-width, 220px)">
+                              <Text>
+                                {evidence.reason_note ?? "Không có ghi chú"}
+                              </Text>
+                              <Box as="details" textStyle="helper">
+                                <Box
+                                  as="summary"
+                                  cursor="var(--atlas-disclosure-cursor, pointer)"
+                                >
+                                  Người ghi nhận và dấu vết
+                                </Box>
+                                <Text overflowWrap="anywhere">
+                                  {evidence.decided_by_actor_id ?? "—"} ·{" "}
+                                  {evidence.decided_at
+                                    ? new Date(
+                                        evidence.decided_at,
+                                      ).toLocaleString("vi-VN", {
+                                        timeZone: "Asia/Ho_Chi_Minh",
+                                      })
+                                    : "—"}
+                                </Text>
+                                <Text overflowWrap="anywhere">
+                                  Quyết định:{" "}
+                                  {evidence.current_decision_id ?? "—"}
+                                </Text>
+                                <Text overflowWrap="anywhere">
+                                  Quyết định trước:{" "}
+                                  {evidence.predecessor_decision_id ?? "—"}
+                                </Text>
+                                <Text overflowWrap="anywhere">
+                                  Phiên bản dòng: {evidence.current_revision_id}
+                                </Text>
+                                <Text overflowWrap="anywhere">
+                                  Phiên bản trước:{" "}
+                                  {evidence.predecessor_revision_id ?? "—"}
+                                </Text>
+                              </Box>
+                            </Table.Cell>
+                          </Table.Row>
+                        );
+                      })}
+                    </Table.Body>
+                  </Table.Root>
+                </Box>
+              </>
+            )}
+          </details>
         </Box>
       )}
     </Box>
@@ -200,6 +228,8 @@ export function ConfirmedNeedCorrectionReview({
       }}
       initialFocusEl={() => cancel.current}
       finalFocusEl={finalFocusEl}
+      motionPreset="none"
+      scrollBehavior="inside"
       placement="center"
       lazyMount
       unmountOnExit
@@ -207,6 +237,7 @@ export function ConfirmedNeedCorrectionReview({
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content
+          _open={{ animationStyle: "detailEnter" }}
           bg="bg.workbench"
           color="fg.default"
           mx="md"

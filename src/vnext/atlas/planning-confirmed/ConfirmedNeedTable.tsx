@@ -43,7 +43,6 @@ export function ConfirmedNeedTable({
   drafts,
   errors,
   editable,
-  compactEditing = false,
   correctionReason,
   onEdit,
 }: {
@@ -51,7 +50,6 @@ export function ConfirmedNeedTable({
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, ConfirmedNeedDraftError>;
   editable: boolean;
-  compactEditing?: boolean;
   correctionReason?: string;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
@@ -123,17 +121,7 @@ export function ConfirmedNeedTable({
         else if (bounds.right > visible.right)
           viewport.scrollLeft += bounds.right - visible.right;
       }}
-      style={
-        {
-          "--atlas-confirmed-need-table-mobile-max-height": compactEditing
-            ? "max(280px, 40dvh)"
-            : "var(--atlas-layout-table-mobile-height, 55dvh)",
-        } as CSSProperties
-      }
-      maxH={{
-        base: "var(--atlas-confirmed-need-table-mobile-max-height)",
-        xl: "var(--atlas-layout-table-height, calc(100dvh - 425px))",
-      }}
+      fillAvailableHeight
     >
       <Table.Root
         aria-label="Nhu cầu xác nhận"
@@ -150,6 +138,10 @@ export function ConfirmedNeedTable({
         tableLayout="fixed"
         css={{
           "@media(min-width:48rem)": {
+            "& tbody td": {
+              paddingBlock: "var(--atlas-spacing-1, 4px)",
+              verticalAlign: "middle",
+            },
             "& [data-role=service-date], & [data-row-secondary]": {
               display: "inline",
             },

@@ -20,6 +20,7 @@ export function ConfirmedNeedDirtyExitDialog({
       }}
       initialFocusEl={() => cancel.current}
       finalFocusEl={finalFocusEl}
+      motionPreset="none"
       placement="center"
       lazyMount
       unmountOnExit
@@ -27,6 +28,7 @@ export function ConfirmedNeedDirtyExitDialog({
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content
+          _open={{ animationStyle: "detailEnter" }}
           bg="bg.workbench"
           color="fg.default"
           borderRadius="workbench"

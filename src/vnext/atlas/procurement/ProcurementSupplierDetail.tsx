@@ -114,7 +114,6 @@ export function ProcurementSupplierDetail({
     target?.focus();
   }, [draft, openNotes]);
   const recipient = allocationRecipient(row);
-  const [added, setAdded] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const pendingExit = useRef<(() => void) | null>(null);
@@ -232,11 +231,6 @@ export function ProcurementSupplierDetail({
             ?.supplier_note ??
           null,
       })),
-    );
-    setAdded(
-      proposal
-        .map((split) => split.supplier_id)
-        .filter((id) => !baseline.some((split) => split.supplier_id === id)),
     );
   };
   const proposal = (
@@ -509,38 +503,35 @@ export function ProcurementSupplierDetail({
                     minW="var(--atlas-layout-zero, 0)"
                   />
                   <Text>{allocationFamilyUnitLabel(row)}</Text>
-                  {added.includes(split.supplier_id) && (
-                    <IconButton
-                      size="sm"
-                      variant="tertiary"
-                      aria-label={`Xóa ${supplier.supplier_name}`}
-                      title={`Xóa ${supplier.supplier_name}`}
-                      disabled={locked}
-                      onClick={() => {
-                        const index = draft.findIndex(
-                          (value) => value.supplier_id === split.supplier_id,
-                        );
-                        const adjacent = draft[index + 1] ?? draft[index - 1];
-                        pendingFocus.current = adjacent
-                          ? `${adjacent.supplier_id}:quantity`
-                          : "";
-                        setDraft((values) =>
-                          values.filter(
-                            (value) => value.supplier_id !== split.supplier_id,
-                          ),
-                        );
-                      }}
-                      minH={{
-                        base: "var(--atlas-layout-mobile-target, 44px)",
-                        lg: "compact",
-                      }}
-                    >
-                      <Trash aria-hidden="true" />
-                    </IconButton>
-                  )}
+                  <IconButton
+                    size="sm"
+                    variant="tertiary"
+                    aria-label={`Xóa ${supplier.supplier_name}`}
+                    title={`Gỡ ${supplier.supplier_name} khỏi phân bổ`}
+                    disabled={locked || !row.allowed_actions.save_allocation}
+                    onClick={() => {
+                      const index = draft.findIndex(
+                        (value) => value.supplier_id === split.supplier_id,
+                      );
+                      const adjacent = draft[index + 1] ?? draft[index - 1];
+                      pendingFocus.current = adjacent
+                        ? `${adjacent.supplier_id}:quantity`
+                        : "";
+                      setDraft((values) =>
+                        values.filter(
+                          (value) => value.supplier_id !== split.supplier_id,
+                        ),
+                      );
+                    }}
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
+                  >
+                    <Trash aria-hidden="true" />
+                  </IconButton>
                 </Box>
                 {!locked &&
-                  draft.length > 1 &&
                   balance !== null &&
                   balance >= 0n &&
                   balance !== allocated && (
@@ -669,10 +660,11 @@ export function ProcurementSupplierDetail({
                       {
                         supplier_id: id,
                         allocated_quantity: "0",
-                        supplier_note: null,
+                        supplier_note:
+                          baseline.find((split) => split.supplier_id === id)
+                            ?.supplier_note ?? null,
                       },
                     ]);
-                    setAdded((ids) => [...ids, id]);
                     setAdding(false);
                   }}
                 >
@@ -807,6 +799,7 @@ export function ProcurementSupplierDetail({
         />
         <Dialog.Positioner p="md">
           <Dialog.Content
+            _open={{ animationStyle: "detailEnter" }}
             bg="bg.workbench"
             color="fg.default"
             borderRadius="workbench"

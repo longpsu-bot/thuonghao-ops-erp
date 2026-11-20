@@ -88,6 +88,35 @@ function openUtilities() {
 }
 
 describe("K3 explicit released correction UI", () => {
+  it("loads the source history on demand and leaves the released quantities locked", async () => {
+    show("released", {}, (f) =>
+      Object.assign(f.batch, createConfirmedNeedCorrectionFixture().batch),
+    );
+    const input = await quantity();
+    const summary = screen.getByText("Lịch sử xác nhận");
+    expect(
+      screen.queryByRole("table", {
+        name: "Lịch sử xác nhận và điều chỉnh",
+        hidden: true,
+      }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(summary);
+    expect(
+      await screen.findByRole("table", {
+        name: "Lịch sử xác nhận và điều chỉnh",
+      }),
+    ).toBeVisible();
+    expect(input).toBeDisabled();
+    await userEvent.click(summary);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("table", {
+          name: "Lịch sử xác nhận và điều chỉnh",
+          hidden: true,
+        }),
+      ).not.toBeInTheDocument(),
+    );
+  });
   it("requires a reason and a separate exact-quantity review before writing", async () => {
     const h = show("released", {}, (f) =>
       Object.assign(f.batch, createConfirmedNeedCorrectionFixture().batch),
@@ -670,9 +699,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     await editValid();
     expect(
       screen.getByRole("region", { name: "Bảng xác nhận nhu cầu" }),
-    ).toHaveStyle({
-      "--atlas-confirmed-need-table-mobile-max-height": "max(280px, 40dvh)",
-    });
+    ).toHaveStyle({ maxHeight: "var(--atlas-sizes-full)" });
     expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
       "data-adjustment-state",
       "valid",
