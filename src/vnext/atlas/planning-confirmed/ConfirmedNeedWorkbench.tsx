@@ -42,6 +42,22 @@ import {
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
 const viDate = (date: string) => date.split("-").reverse().join("/");
+
+function revealSelectedDay(button: HTMLButtonElement | null) {
+  const strip = button?.parentElement;
+  if (!strip || !button) return;
+  const reveal = () => {
+    if (strip.scrollWidth > strip.clientWidth)
+      strip.scrollLeft =
+        button.offsetLeft - (strip.clientWidth - button.offsetWidth) / 2;
+  };
+  reveal();
+  if (typeof ResizeObserver === "undefined") return;
+  const observer = new ResizeObserver(reveal);
+  observer.observe(strip);
+  return () => observer.disconnect();
+}
+
 export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const c = useConfirmedNeedWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
@@ -116,10 +132,16 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
       py={c.days.length > 1 ? "xs" : undefined}
       gap="xs"
       overflowX={c.days.length > 1 ? "auto" : undefined}
+      position="relative"
     >
       {c.days.map((day) => (
         <Button
           key={day.date}
+          ref={
+            day.date === c.date && c.days.length > 1 && !c.rangeBusy
+              ? revealSelectedDay
+              : undefined
+          }
           size="sm"
           flexShrink="0"
           variant={day.date === c.date ? "secondary" : "tertiary"}
