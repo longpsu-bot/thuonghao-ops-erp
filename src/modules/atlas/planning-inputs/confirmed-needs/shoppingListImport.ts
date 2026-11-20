@@ -697,7 +697,7 @@ export function validateShoppingListEnvelope(
       );
       next[id] = {
         ...existing,
-        exact_quantity: confirmedNeedInputDisplay(quantity),
+        exact_quantity: confirmedNeedInputDisplay(quantity, "."),
         reason_code: defaultConfirmedNeedReason(line, existing, quantity),
         quantity_entered: true,
       };

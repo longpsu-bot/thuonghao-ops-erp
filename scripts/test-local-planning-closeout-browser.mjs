@@ -416,6 +416,11 @@ export async function certifyLocalCloseoutBrowser() {
       save_receipts: 1,
       decisions: 248,
     });
+    // Simulate a deployment retiring the loaded tab's old JavaScript assets.
+    await connection.send("Network.enable");
+    await connection.send("Network.setBlockedURLs", {
+      urls: ["*/assets/*.js"],
+    });
     assert(await click("Xuất Phiếu đi chợ"));
     const downloaded = await until(
       () => readdirSync(evidenceDir).find((name) => name.endsWith(".xlsx")),
@@ -424,6 +429,7 @@ export async function certifyLocalCloseoutBrowser() {
     const originalWorkbook = join(evidenceDir, downloaded);
     await until(workbookReady, "export_finished");
     await importFile(originalWorkbook);
+    await connection.send("Network.setBlockedURLs", { urls: [] });
     assert(
       await evaluate(
         '!document.querySelector(\'section[aria-label="Xác nhận nhu cầu"] [role="alert"]\')',

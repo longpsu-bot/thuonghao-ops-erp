@@ -33,10 +33,12 @@ export function RecipeReview({ c }: { c: DishRecipeController }) {
               const old = before?.lines.find((l) => l.id === id),
                 next = after.lines.find((l) => l.id === id),
                 line = next ?? old!;
+              const oldQuantity = old?.quantity.replace(".", ",");
+              const nextQuantity = next?.quantity.replace(".", ",");
               const facts = [
                 !old ? "Thêm" : !next ? "Bỏ" : "",
-                old && next && old.quantity !== next.quantity
-                  ? `Định lượng: ${old.quantity} → ${next.quantity}`
+                old && next && oldQuantity !== nextQuantity
+                  ? `Định lượng: ${oldQuantity} → ${nextQuantity}`
                   : "",
                 old && next && old.unitId !== next.unitId
                   ? `Đơn vị: ${unitLabel(old.unitId, c.catalog.units)} → ${unitLabel(next.unitId, c.catalog.units)}`
@@ -53,7 +55,7 @@ export function RecipeReview({ c }: { c: DishRecipeController }) {
                   <Table.Cell>
                     {facts.join(" · ") || "Giữ nguyên"}
                     {(!old || !next) &&
-                      ` · ${line.quantity} ${unitLabel(line.unitId, c.catalog.units)}${line.note ? ` · ${line.note}` : ""}`}
+                      ` · ${nextQuantity ?? oldQuantity} ${unitLabel(line.unitId, c.catalog.units)}${line.note ? ` · ${line.note}` : ""}`}
                   </Table.Cell>
                 </Table.Row>
               );

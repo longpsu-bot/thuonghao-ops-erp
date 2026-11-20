@@ -15,6 +15,8 @@ Apply [ARCH-002](../architecture/arch-002-atlas-system-map.md), [Atlas model con
 
 The workbook is generated from complete saved/current authoritative daily Confirmed Need facts. It cannot create/retarget School, Ingredient, Unit, Delivery Location, policy, Need lineage, lifecycle or a persisted confirmed quantity. Export blocks incomplete/stale authority and unsaved local drafts in the connected workbench. Every authorized page must retain coherent batch/version/source evidence.
 
+The connected app loads the workbook code when the tab opens. After a frontend deployment, an open tab can still export and import using its loaded version. Each action continues to check current daily authority.
+
 A workbook collects 1–7 distinct represented service dates, each with one complete daily batch, one date worksheet and one daily metadata record. This creates no weekly aggregate. The connected UI composes daily authorities over a 1–7 consecutive-day range. Every workbook date must lie inside that range. All daily authorities and the whole workbook are validated before any local draft changes; one stale day rejects the import. Explicit Save remains per daily batch. The A+ codec, geometry and `partialImport=false` contract are unchanged.
 
 Quantity remains exact up to six decimal places, including explicit zero. D exports the shortest exact text representation without rounding; raw numeric XML edits are read before binary conversion. Exact equality to the authoritative baseline preserves the local draft. A real edit must satisfy existing two-decimal entry and current Planning-step/policy rules. Existing governed reason requirements and optimistic concurrency remain backend-authoritative at explicit Save.
@@ -56,7 +58,7 @@ There are exactly two explicit hidden row kinds:
 
 One initial School band precedes each represented School's data. School lines are contiguous beneath the appropriate band. A continuation is a separate SCHOOL_BAND at the first body row of a generated new page, labelled `SCHOOL NAME (tiếp)`. No fake line ID is created. Band cells suppress internal vertical rules, use bold School text and a neutral gray fill; grayscale readability carries the grouping. No automatic row striping or web branding.
 
-Export retains authorized source School first-occurrence order and the original line sequence within each School. The current read exposes no canonical School display-rank field. No lexical sort or name special case is invented. Import permits row reordering within a School only when grouping and generated pagination remain valid; a full Table sort that scatters bands/data fails closed.
+Export retains authorized source School first-occurrence order and the original line sequence within each School. The operational read pages Schools in configured display order. The workbook preserves that source sequence. Import permits row reordering within a School only when grouping and generated pagination remain valid; a full Table sort that scatters bands/data fails closed.
 
 The Owner retained `SỐ LƯỢNG` in final A+; no change to `SL`.
 

@@ -125,3 +125,11 @@ export function draftLineRequest(
     reason_note: draft.reason_note.trim() || null,
   };
 }
+
+export function confirmedNeedSchool(school: ConfirmedNeedLine["school"]) {
+  return {
+    school_id: school.id,
+    school_name: school.name,
+    display_order: school.display_order,
+  };
+}

@@ -1,4 +1,8 @@
-import { confirmedNeedUnitLabel } from "./confirmedNeedDraft";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
+import {
+  confirmedNeedSchool,
+  confirmedNeedUnitLabel,
+} from "./confirmedNeedDraft";
 import {
   Box,
   Button,
@@ -114,8 +118,10 @@ export function ConfirmedNeedSupportDetail({
     refresh,
   ]);
   const schools = Array.from(
-    new Map(lines.map((l) => [l.school.id, l.school])).values(),
-  );
+    new Map(
+      lines.map((l) => [l.school.id, confirmedNeedSchool(l.school)]),
+    ).values(),
+  ).sort(compareCanonicalSchools);
   const ingredients = Array.from(
     new Map(lines.map((l) => [l.ingredient.id, l.ingredient])).values(),
   );
@@ -151,8 +157,8 @@ export function ConfirmedNeedSupportDetail({
             >
               <option value="">Tất cả</option>
               {schools.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+                <option key={s.school_id} value={s.school_id}>
+                  {s.school_name}
                 </option>
               ))}
             </NativeSelect.Field>

@@ -195,8 +195,8 @@ describe("Procurement allocation issue sorting", () => {
           (item) =>
             item.querySelector("[data-allocation-ingredient]")!.textContent,
         );
-    expect(ingredients()).toEqual(["Bí đỏ", "Bí đỏ", "Gạo"]);
-    expect(dates()).toEqual(["12/10/2026", "13/10/2026", "12/10/2026"]);
+    expect(ingredients()).toEqual(["Bí đỏ", "Gạo", "Bí đỏ"]);
+    expect(dates()).toEqual(["12/10/2026", "12/10/2026", "13/10/2026"]);
     fireEvent.click(
       screen.getByRole("button", { name: "Sắp xếp theo Nguyên liệu" }),
     );
@@ -284,6 +284,7 @@ describe("Procurement allocation issue sorting", () => {
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
+      "Ngày dùng",
       "Trường / điểm giao",
       "Nguyên liệu",
       "Nhu cầu",
@@ -319,13 +320,15 @@ describe("Procurement allocation issue sorting", () => {
     expect(persistedRow).not.toHaveTextContent("Mặc định");
   });
 
-  it("orders a date range by canonical School then Ingredient by default", () => {
+  it("orders a date range by v1 School rank then date by default", () => {
     const first = {
       ...row("first", "Cà rốt", "UNALLOCATED", "1"),
       service_date: "2026-09-10",
       school_id: "school-b",
       school_name: "Trường B",
-      schools: [{ school_id: "school-b", school_name: "Trường B" }],
+      schools: [
+        { school_id: "school-b", school_name: "Trường B", display_order: 1 },
+      ],
       location_name: "Trường B",
     };
     const second = {
@@ -333,7 +336,9 @@ describe("Procurement allocation issue sorting", () => {
       service_date: "2026-09-12",
       school_id: "school-a",
       school_name: "Trường A",
-      schools: [{ school_id: "school-a", school_name: "Trường A" }],
+      schools: [
+        { school_id: "school-a", school_name: "Trường A", display_order: 2 },
+      ],
       location_name: "Trường A",
     };
     const third = {
@@ -341,7 +346,9 @@ describe("Procurement allocation issue sorting", () => {
       service_date: "2026-09-11",
       school_id: "school-a",
       school_name: "Trường A",
-      schools: [{ school_id: "school-a", school_name: "Trường A" }],
+      schools: [
+        { school_id: "school-a", school_name: "Trường A", display_order: 2 },
+      ],
       location_name: "Trường A",
     };
     render(
@@ -362,6 +369,6 @@ describe("Procurement allocation issue sorting", () => {
       bodyRows.map((tableRow) => {
         return `${tableRow.querySelector("[data-allocation-recipient]")!.textContent}|${tableRow.querySelector("[data-allocation-ingredient]")!.textContent}`;
       }),
-    ).toEqual(["Trường A|Bí đỏ", "Trường A|Gạo", "Trường B|Cà rốt"]);
+    ).toEqual(["Trường B|Cà rốt", "Trường A|Bí đỏ", "Trường A|Gạo"]);
   });
 });

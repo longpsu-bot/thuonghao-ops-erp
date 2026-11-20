@@ -18,6 +18,7 @@ export type NeedGenerationGroup = {
   customer_id: string;
   school_id: string;
   school_name: string;
+  display_order?: number | null;
   delivery_location_id: string;
   delivery_location_name: string;
   ingredient_id: string;

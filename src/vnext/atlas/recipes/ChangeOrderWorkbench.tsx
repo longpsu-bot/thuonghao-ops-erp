@@ -385,6 +385,11 @@ export function ChangeOrderWorkbench(
                   ].map((label) => (
                     <Table.ColumnHeader
                       key={label}
+                      data-sticky-column={
+                        label === "Lệnh" || label === "Thao tác"
+                          ? ""
+                          : undefined
+                      }
                       left={
                         label === "Lệnh"
                           ? "var(--atlas-layout-zero, 0)"

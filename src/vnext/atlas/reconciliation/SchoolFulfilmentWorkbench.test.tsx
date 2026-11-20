@@ -241,15 +241,17 @@ describe("read-only reconciliation operator workbench", () => {
       expect(h.read).toHaveBeenCalledTimes(1);
     },
   );
-  it("counts overlapping attention and OK dimensions and sorts attention stably first", async () => {
+  it("counts overlapping attention and OK dimensions and keeps configured School order across filters", async () => {
     const rows = [
       fulfilmentRow({
         school_id: "clean",
+        display_order: 0,
         school_name: "Clean OK",
         comparison_status: "OK",
       }),
       fulfilmentRow({
         school_id: "blocked",
+        display_order: 4,
         school_name: "Blocked OK",
         comparison_status: "OK",
         pxk_state: "BLOCKED",
@@ -257,12 +259,17 @@ describe("read-only reconciliation operator workbench", () => {
       }),
       fulfilmentRow({
         school_id: "replacement",
+        display_order: 7,
         school_name: "Replacement OK",
         comparison_status: "OK",
         pxk_state: "REPLACEMENT_REQUIRED",
         blockers: ["PXK_REPLACEMENT_REQUIRED"],
       }),
-      fulfilmentRow({ school_id: "mismatch", school_name: "Mismatch" }),
+      fulfilmentRow({
+        school_id: "mismatch",
+        display_order: 9,
+        school_name: "Mismatch",
+      }),
     ];
     const h = show("ALL", {
       getWorkbench: vi
@@ -292,9 +299,7 @@ describe("read-only reconciliation operator workbench", () => {
     expect(within(table()).queryByText("Clean OK")).toBeNull();
     filter("all");
     expect(names()).toEqual(
-      [...rows.slice(1), rows[0]].map(
-        (r) => r.school_name + r.delivery_location_name,
-      ),
+      rows.map((r) => r.school_name + r.delivery_location_name),
     );
     filter("OK");
     expect(within(table()).getAllByText("Khớp")).toHaveLength(3);

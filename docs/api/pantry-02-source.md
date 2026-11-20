@@ -9,7 +9,9 @@ the distinct saved menu dates, first delivery date and exact weekly quantity.
 An optional rate preview uses the same dates. `save_weekly_pantry_rule` requires
 `planning.pantry.write`, a current menu token, expected Unit and rule version,
 and a command receipt. It saves an effective-dated rate or stops that rule
-starting in the selected week.
+starting in the selected week. This command accepts a browser timestamp up
+to 60 seconds ahead of PostgreSQL transaction time and preserves the original
+request for idempotent replay. A larger offset returns a `requested_at` error.
 
 Weekly Menu Save accepts the menu assignments. Under the week lock, the backend
 recomputes the automatic quantity using the latest separately saved rate and

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   pantryResultMessage,
+  planningClockSkewMessage,
   weeklyPantryFromResult,
   type AtlasRpcResult,
   type PantryApi,
@@ -48,7 +49,9 @@ const messages: Record<string, string> = {
 };
 const failure = (r: AtlasRpcResult) =>
   r.kind === "backend_error"
-    ? (messages[r.error.error_code] ?? pantryResultMessage(r))
+    ? (planningClockSkewMessage(r) ??
+      messages[r.error.error_code] ??
+      pantryResultMessage(r))
     : pantryResultMessage(r);
 
 export function useWeeklyPantryRules({

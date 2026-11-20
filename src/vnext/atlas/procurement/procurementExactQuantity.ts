@@ -28,6 +28,7 @@ export function sumExactQuantities(values: string[]): bigint | null {
 
 export function formatExactQuantityForOperator(
   value: string | bigint | null,
+  separator: "." | "," = ",",
 ): string {
   const exact = typeof value === "string" ? parseExactQuantity(value) : value;
   if (exact === null) return "—";
@@ -35,5 +36,5 @@ export function formatExactQuantityForOperator(
   const fraction = String(absolute % SCALE)
     .padStart(6, "0")
     .replace(/0+$/, "");
-  return `${exact < 0n ? "-" : ""}${absolute / SCALE}${fraction ? `,${fraction}` : ""}`;
+  return `${exact < 0n ? "-" : ""}${absolute / SCALE}${fraction ? `${separator}${fraction}` : ""}`;
 }

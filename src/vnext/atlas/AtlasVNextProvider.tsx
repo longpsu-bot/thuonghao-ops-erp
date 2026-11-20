@@ -57,7 +57,22 @@ export function AtlasVNextProvider({ children }: { children: ReactNode }) {
   const portalRef = useRef<HTMLDivElement>(null);
   return (
     <ChakraProvider value={atlasSystem}>
-      <Box className="atlas-vnext" minW="var(--atlas-layout-zero, 0)">
+      <Box
+        className="atlas-vnext"
+        minW="var(--atlas-layout-zero, 0)"
+        onFocusCapture={({ target }) => {
+          if (
+            ((target instanceof HTMLInputElement && target.type === "text") ||
+              target instanceof HTMLTextAreaElement) &&
+            !target.readOnly &&
+            target.getAttribute("role") !== "combobox" &&
+            (target.closest("td, [role=gridcell], [data-atlas-editable-row]") ||
+              target.inputMode === "decimal" ||
+              target.inputMode === "numeric")
+          )
+            target.select();
+        }}
+      >
         <AtlasPortalContainerContext.Provider value={portalRef}>
           {children}
           <Box ref={portalRef} data-atlas-portal-root="" />

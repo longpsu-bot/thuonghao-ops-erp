@@ -190,6 +190,7 @@ export function IngredientCatalogue({
                       columnKey={key}
                       sort={sort}
                       onSort={onSort}
+                      data-sticky-column={key === "ingredient" ? "" : undefined}
                       position={
                         key === "ingredient"
                           ? { base: "static", md: "sticky" }
@@ -205,6 +206,7 @@ export function IngredientCatalogue({
                   ) : (
                     <Table.ColumnHeader
                       key={label}
+                      data-sticky-column={label === "Thao tác" ? "" : undefined}
                       display={{
                         lg:
                           detailOpen && label !== "Thao tác"

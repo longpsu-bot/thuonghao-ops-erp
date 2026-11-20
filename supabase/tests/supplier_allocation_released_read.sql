@@ -12,17 +12,38 @@ on conflict do nothing;
 
 select pg_temp.seed_purchase_preparation_scale(
   'allocation-released-read','allocation-read',date '2027-01-18');
+-- Four schools have 59 lines each. Reverse their ranks so name order is detectably wrong.
+update atlas_admin.schools set display_order=105-display_order
+where customer_id=md5('allocation-released-read:customer')::uuid;
 insert into scale_requests(name,request)
 select 'save',pg_temp.scale_confirmed_need_save_command(
   'allocation-read-save',md5('allocation-released-read:confirmed-need-batch')::uuid);
 set local statement_timeout='8s';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','b6000000-0000-0000-0000-000000000101',true);
+insert into scale_results(name,response) values
+  ('confirmed-page',atlas_api.get_confirmed_need_review(jsonb_build_object(
+    'contract_version','RMVP-05.v1','requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+    'correlation_id',gen_random_uuid(),'payload',jsonb_build_object('confirmed_need_batch_id',
+      md5('allocation-released-read:confirmed-need-batch')::uuid,'line_offset',58,'line_limit',2)))),
+  ('generated-page',atlas_api.get_need_generation_workbench(jsonb_build_object(
+    'contract_version','RMVP-04.v1','requested_by_auth_subject','b6000000-0000-0000-0000-000000000101',
+    'correlation_id',gen_random_uuid(),'payload',jsonb_build_object('period_start','2027-01-18',
+      'period_end','2027-01-18','need_generation_run_id',md5('allocation-released-read:need-run')::uuid,
+      'group_offset',58,'group_limit',2))));
 insert into scale_results(name,response)
 select name,atlas_api.save_confirmed_needs(request) from scale_requests where name='save';
 set constraints all immediate;
 reset role;
 set constraints all deferred;
+select is((select jsonb_agg(jsonb_build_array(coalesce(line->'school_id',line#>'{school,id}'),
+    coalesce(line->'display_order',line#>'{school,display_order}')) order by position)
+  from jsonb_array_elements(coalesce(response#>'{workbench,lines}',response#>'{workbench,grouped_requirements}'))
+    with ordinality as page(line,position)),
+  (select jsonb_agg(jsonb_build_array(school_id,display_order) order by display_order)
+    from atlas_admin.schools where customer_id=md5('allocation-released-read:customer')::uuid and display_order in (1,2)),
+  name||' ranks schools before taking a page that crosses the school boundary')
+from scale_results where name in ('confirmed-page','generated-page');
 select is((select response->>'success' from scale_results where name='save'),
   'true','local scale setup saves 236 authoritative decisions');
 
@@ -331,6 +352,18 @@ select is((select jsonb_array_length(response->'rows') from reopened_samples whe
   4,'issued-order dispatch impact retains all four School scopes');
 select is((select jsonb_array_length(response->'rows') from reopened_samples where kind='reconciliation'),
   4,'reconciliation retains all four authorized School scopes after correction');
+select ok(count(*)=4 and bool_and(coalesce(scope->'display_order'=to_jsonb(school.display_order),false)),
+  kind||' projects the current master rank for each school row')
+from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
+cross join lateral (values (case when kind='dispatch' then item->'preview' else item end)) as row_scope(scope)
+left join atlas_admin.schools school on school.school_id=(scope->>'school_id')::uuid
+where kind in ('dispatch','reconciliation') group by kind;
+select ok(count(*)=236 and bool_and(coalesce(member->'display_order'=to_jsonb(school.display_order),false)),
+  'allocation families expose the master rank on every contributing school')
+from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item
+cross join lateral jsonb_array_elements(item->'schools') member
+left join atlas_admin.schools school on school.school_id=(member->>'school_id')::uuid
+where kind='allocation';
 select ok((select bool_and(item->>'pxk_state'='BLOCKED'
     and jsonb_array_length(item->'blockers')>0)
   from reopened_samples cross join lateral jsonb_array_elements(response->'rows') item

@@ -38,6 +38,7 @@ export function schoolDispatchUnitLabel(
 }
 
 export type SchoolDispatchPreview = {
+  display_order?: number | null;
   service_date: string;
   school_id: string;
   delivery_location_id: string;

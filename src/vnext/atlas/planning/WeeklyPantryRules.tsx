@@ -10,6 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
+import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { viDate } from "../bridges/planning";
 import { PantryIngredientChooser } from "./PantryIngredientChooser";
 import { PantrySchoolChooser } from "./PantrySchoolChooser";
@@ -32,13 +33,22 @@ export function WeeklyPantryRules({
 }) {
   const w = c.weekly;
   const { draft, reviewed } = w;
-  const schools = (c.pantryData?.schools ?? []).filter(
-    (s) =>
-      s.school_status === "ACTIVE" && visibleSchoolIds.includes(s.school_id),
+  const schools = (c.pantryData?.schools ?? [])
+    .filter(
+      (s) =>
+        s.school_status === "ACTIVE" && visibleSchoolIds.includes(s.school_id),
+    )
+    .sort(compareCanonicalSchools);
+  const rank = new Map(
+    schools.map((school, index) => [school.school_id, index]),
   );
-  const rows = (w.data?.rules ?? []).filter(
-    (r) => r.effective_from && visibleSchoolIds.includes(r.school_id),
-  );
+  const rows = (w.data?.rules ?? [])
+    .filter((r) => r.effective_from && visibleSchoolIds.includes(r.school_id))
+    .sort(
+      (a, b) =>
+        (rank.get(a.school_id) ?? Infinity) -
+        (rank.get(b.school_id) ?? Infinity),
+    );
   const schoolInput = useRef<HTMLInputElement>(null);
   const rateInput = useRef<HTMLInputElement>(null);
   const formTitle = useRef<HTMLHeadingElement>(null);

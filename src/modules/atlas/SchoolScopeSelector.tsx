@@ -4,7 +4,7 @@ export type SchoolScopeOption = {
   school_id: string;
   school_code?: string;
   school_name: string;
-  display_order?: number;
+  display_order?: number | null;
 };
 
 type SchoolScopeSelectorProps = {

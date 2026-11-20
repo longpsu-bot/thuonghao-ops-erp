@@ -722,7 +722,7 @@ describe("Procurement vNext operator workbench", () => {
     );
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
-    ).toHaveValue("48,5");
+    ).toHaveValue("48.5");
   });
   it("saves a note-only decision and adopts the authoritative note readback", async () => {
     const { save, read, fixture } = show("manual_split");
@@ -823,6 +823,7 @@ describe("Procurement vNext operator workbench", () => {
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
+      "Ngày dùng",
       "Trường / điểm giao",
       "Nguyên liệu",
       "Nhu cầu",
@@ -927,7 +928,7 @@ describe("Procurement vNext operator workbench", () => {
     const row = trigger.closest("tr")!;
     expect(row).toHaveAttribute("aria-selected", "true");
     expect(row).toHaveStyle({ background: "var(--atlas-colors-bg-selected)" });
-    expect(row.firstElementChild).toHaveStyle({
+    expect(row.querySelector("[data-allocation-recipient-cell]")).toHaveStyle({
       background: "var(--atlas-colors-bg-selected)",
     });
     expect(trigger).toHaveAttribute("aria-expanded", "true");

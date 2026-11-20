@@ -146,7 +146,7 @@ try {
   if (mode === "--verify-native")
     assert.equal(
       result.drafts[result.changedLineIds[0]].exact_quantity,
-      "12,5",
+      "12.5",
     );
   const p = shoppingListContract.print;
   const widths = layout.shoppingListColumnUsableWidths();

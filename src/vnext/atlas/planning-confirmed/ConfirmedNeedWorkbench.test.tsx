@@ -375,7 +375,11 @@ describe("Confirmed Need Chakra operator surface", () => {
     show("normal", {}, (fixture) => {
       const [first, second, third] = fixture.batch.lines;
       Object.assign(first!, {
-        school: { id: "school-b", name: "BÌNH MỸ - BÌNH DƯƠNG" },
+        school: {
+          id: "school-b",
+          name: "BÌNH MỸ - BÌNH DƯƠNG",
+          display_order: 1,
+        },
         delivery_location: {
           id: "location-b",
           name: "BINH MY - BINH DUONG",
@@ -383,12 +387,12 @@ describe("Confirmed Need Chakra operator surface", () => {
         ingredient: { id: "ingredient-c", name: "Cà rốt" },
       });
       Object.assign(second!, {
-        school: { id: "school-a", name: "AN PHÚ (BD)" },
+        school: { id: "school-a", name: "AN PHÚ (BD)", display_order: 2 },
         delivery_location: { id: "location-a2", name: "PHÂN HIỆU 2" },
         ingredient: { id: "ingredient-g", name: "Gạo thơm" },
       });
       Object.assign(third!, {
-        school: { id: "school-a", name: "AN PHÚ (BD)" },
+        school: { id: "school-a", name: "AN PHÚ (BD)", display_order: 2 },
         delivery_location: { id: "location-a", name: "AN PHÚ (BD)" },
         ingredient: { id: "ingredient-b", name: "Bí đỏ" },
       });
@@ -406,16 +410,16 @@ describe("Confirmed Need Chakra operator surface", () => {
         return `${cells[0]!.textContent}|${cells[1]!.textContent}`;
       }),
     ).toEqual([
+      "BÌNH MỸ - BÌNH DƯƠNG07/09/2026BINH MY - BINH DUONG|Cà rốt",
       "AN PHÚ (BD)07/09/2026|Bí đỏ",
       "AN PHÚ (BD)07/09/2026PHÂN HIỆU 2|Gạo thơm",
-      "BÌNH MỸ - BÌNH DƯƠNG07/09/2026BINH MY - BINH DUONG|Cà rốt",
     ]);
-    expect(within(rows[0]!).getAllByText("AN PHÚ (BD)")).toHaveLength(1);
-    expect(within(rows[1]!).getByText("PHÂN HIỆU 2")).toHaveAttribute(
+    expect(within(rows[1]!).getAllByText("AN PHÚ (BD)")).toHaveLength(1);
+    expect(within(rows[2]!).getByText("PHÂN HIỆU 2")).toHaveAttribute(
       "data-row-secondary",
       "",
     );
-    expect(within(rows[2]!).getByText("BINH MY - BINH DUONG")).toHaveAttribute(
+    expect(within(rows[0]!).getByText("BINH MY - BINH DUONG")).toHaveAttribute(
       "data-row-secondary",
       "",
     );
@@ -827,7 +831,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     await waitFor(() =>
       expect(
         screen.getByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" }),
-      ).toHaveValue("99999999999999,98"),
+      ).toHaveValue("99999999999999.98"),
     );
     fireEvent.change(await quantity(), {
       target: { value: "99999999999999,99" },
@@ -946,7 +950,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     ).toHaveTextContent("0,1");
     expect(row).not.toHaveTextContent("Làm tròn:");
     expect(row).not.toHaveTextContent("Bước xác nhận:");
-    expect(input).toHaveValue("0,1");
+    expect(input).toHaveValue("0.1");
     openUtilities();
     fireEvent.click(
       screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
@@ -1011,7 +1015,7 @@ describe("Confirmed Need Chakra operator surface", () => {
       fixture.batch.lines[0]!.proposed_confirmed_quantity = "10.123456";
       fixture.batch.lines[0]!.effective_policy!.planning_step = "0.000001";
     });
-    expect(await quantity()).toHaveValue("10,123456");
+    expect(await quantity()).toHaveValue("10.123456");
     expect(await quantity()).not.toHaveAttribute("readonly");
     expect(await quantity()).toBeEnabled();
   });
@@ -1062,7 +1066,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     await editValid();
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     expect(await screen.findByText("Đã lưu thay đổi.")).toBeVisible();
-    expect(await quantity()).toHaveValue("12,5");
+    expect(await quantity()).toHaveValue("12.5");
     expect(screen.getByText(/1 đã điều chỉnh/)).toBeVisible();
     const row = (await quantity()).closest("tr")!;
     expect(
@@ -1113,7 +1117,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
-    expect(await quantity()).toHaveValue("10,25");
+    expect(await quantity()).toHaveValue("10.25");
   });
   it("uses the same dirty dialog for committed School Apply", async () => {
     show();

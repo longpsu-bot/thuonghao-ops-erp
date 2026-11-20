@@ -19,6 +19,7 @@ export type SchoolFulfilmentRow = {
   service_date: string;
   school_id: string;
   school_name: string;
+  display_order?: number | null;
   delivery_location_id: string;
   delivery_location_name: string;
   comparison_status: SchoolFulfilmentComparisonStatus;

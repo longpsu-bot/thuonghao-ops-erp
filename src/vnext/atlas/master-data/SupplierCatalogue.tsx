@@ -150,6 +150,7 @@ export function SupplierCatalogue({
             <Table.Row>
               <AtlasSortableColumnHeader
                 label="Nhà cung ứng"
+                data-sticky-column=""
                 position={{ base: "static", md: "sticky" }}
                 left="var(--atlas-layout-zero, 0)"
                 bg="bg.toolbar"
@@ -182,6 +183,7 @@ export function SupplierCatalogue({
               </Table.ColumnHeader>
               <Table.ColumnHeader
                 position={{ base: "static", md: "sticky" }}
+                data-sticky-column=""
                 right="var(--atlas-layout-zero, 0)"
                 bg="bg.toolbar"
               >

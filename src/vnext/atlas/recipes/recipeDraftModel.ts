@@ -36,7 +36,7 @@ export function recipeDraftFor(
       .map((l) => ({
         id: l.recipe_line_id,
         ingredientId: l.ingredient_id,
-        quantity: String(l.quantity_per_basis).replace(".", ","),
+        quantity: String(l.quantity_per_basis),
         unitId: l.unit_id,
         note: l.operational_note ?? "",
       })),

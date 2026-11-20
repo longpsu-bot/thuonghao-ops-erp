@@ -50,7 +50,10 @@ import {
   focusFirstCompactFilter,
   preserveCompactFilterFocusOrder,
 } from "../compactFilterFocus";
-import { derivedDefaultAllocation } from "./procurementAllocationPresentation";
+import {
+  allocationSchools,
+  derivedDefaultAllocation,
+} from "./procurementAllocationPresentation";
 import type { ProcurementPxkImpactProps } from "./ProcurementPxkImpact";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
@@ -154,12 +157,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
         Array.from(
           new Map(
             controller.allocation.rows.flatMap((row) =>
-              (
-                row.schools ??
-                (row.school_id && row.school_name
-                  ? [{ school_id: row.school_id, school_name: row.school_name }]
-                  : [])
-              ).map((school) => [school.school_id, school]),
+              allocationSchools(row).map((school) => [
+                school.school_id,
+                school,
+              ]),
             ),
           ).values(),
         ).sort(compareCanonicalSchools),
@@ -769,7 +770,6 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           </Flex>
                         }
                         rows={visible}
-                        showServiceDate={multiDay}
                         selectedKey={selected ? selectedKey : null}
                         disabled={
                           controller.loading ||

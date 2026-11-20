@@ -752,6 +752,9 @@ export const atlasSystem = createSystem(
                 pointerEvents: "none",
               },
               "&:last-child::after": { display: "none" },
+              "&[data-sticky-column]": {
+                zIndex: "var(--atlas-layer-sticky-corner, 3)",
+              },
               "&[data-sticky-column]::after": { bg: "border.default" },
             },
             cell: {
@@ -800,6 +803,15 @@ export const atlasSystem = createSystem(
             },
           },
           variants: {
+            stickyHeader: {
+              true: {
+                header: {
+                  "& :where(tr)": {
+                    zIndex: "var(--atlas-layout-sticky-header-z, 3)",
+                  },
+                },
+              },
+            },
             size: {
               sm: {
                 root: { textStyle: "table" },
@@ -811,7 +823,7 @@ export const atlasSystem = createSystem(
               },
             },
           },
-          defaultVariants: { size: "sm" },
+          defaultVariants: { size: "sm", stickyHeader: true },
         },
       },
     },

@@ -238,7 +238,7 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                         }
                       />
                     ) : (
-                      line.quantity
+                      line.quantity.replace(".", ",")
                     )}
                     {editable && parseQuantity(line.quantity) === null && (
                       <Text
