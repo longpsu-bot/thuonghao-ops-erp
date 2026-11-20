@@ -238,7 +238,7 @@ it("carries the selected seven-day range from new Confirmed Need to Allocation a
   expect(save).not.toHaveBeenCalled();
 }, 60000);
 
-it("preserves an existing Allocation range and unsaved split note when Confirmed Need requests another range", async () => {
+it("preserves the Allocation range when staff discard a split note and continue from another Need range", async () => {
   const { apis } = await showSchool();
   const allocation = vi.spyOn(apis.purchaseReview, "getConfirmedAllocations");
   const save = vi.spyOn(apis.purchaseReview, "saveConfirmedAllocation");
@@ -258,6 +258,13 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
   fireEvent.change(note, {
     target: { value: "Giữ ghi chú của phạm vi đang mở" },
   });
+  fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Bỏ thay đổi và đóng" }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
   const readsBeforeNavigation = allocation.mock.calls.length;
   await nav("Xác nhận nhu cầu");
   const proceed = await screen.findByRole("button", {
@@ -276,12 +283,10 @@ it("preserves an existing Allocation range and unsaved split note when Confirmed
       /Phân bổ NCC vẫn giữ khoảng ngày 2026-09-07 → 2026-09-09/,
     ),
   ).toBeVisible();
-  expect(
-    screen.getByRole("textbox", { name: "Ghi chú cho NCC An Phú" }),
-  ).toHaveValue("Giữ ghi chú của phạm vi đang mở");
+  expect(note).not.toBeInTheDocument();
   expect(allocationRange).toBeInTheDocument();
   expect(allocationRange).toHaveTextContent("07/09/2026 — 09/09/2026");
-  expect(allocationRange).not.toBeVisible();
+  expect(allocationRange).toBeVisible();
   expect(allocation).toHaveBeenCalledTimes(readsBeforeNavigation);
   expect(save).not.toHaveBeenCalled();
 }, 60000);
