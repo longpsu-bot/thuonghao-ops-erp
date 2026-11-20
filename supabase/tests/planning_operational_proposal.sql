@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(66);
+select plan(76);
 
 set local session_replication_role = replica;
 
@@ -298,7 +298,7 @@ select pg_temp.proposal_seed_run(
     jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001103','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000102','unit_id','d4600000-0000-0000-0000-000000000014','quantity','0.0255'),
     jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001104','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000103','unit_id','d4600000-0000-0000-0000-000000000014','quantity','0.105'),
     jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001105','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000104','unit_id','d4600000-0000-0000-0000-000000000014','quantity','1.225'),
-    jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001106','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000105','unit_id','d4600000-0000-0000-0000-000000000014','quantity','228'),
+    jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001106','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000105','unit_id','d4600000-0000-0000-0000-000000000014','quantity','2.01'),
     jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001107','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000106','unit_id','d4600000-0000-0000-0000-000000000015','quantity','3.8'),
     jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001108','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000107','unit_id','d4600000-0000-0000-0000-000000000015','quantity','13'),
     jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000001109','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000113','unit_id','d4600000-0000-0000-0000-000000000014','quantity','1.225'),
@@ -326,13 +326,13 @@ select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000102'), '(0.025500,0.100000)', 'POP-04 raw 0.0255 kg uses Ingredient step 0.1, not H1A 0.01');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000103'), '(0.105000,0.200000)', 'POP-05 raw 0.105 kg uses Ingredient step 0.1');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000104'), '(1.225000,1.250000)', 'POP-06 raw 1.225 kg uses unconventional Ingredient step 0.25');
-select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000105'), '(228.000000,228.000000)', 'POP-07 representable 228 kg remains 228');
+select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000105'), '(2.010000,2.000000)', 'POP-07 raw 2.01 kg at step 0.1 proposes 2 kg');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000106'), '(3.800000,4.000000)', 'POP-08 raw count 3.8 proposes 4');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000107'), '(13.000000,18.000000)', 'POP-09 raw count 13 uses Ingredient step 6');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000113'), '(1.225000,1.300000)', 'POP-09A raw 1.225 kg uses normal Ingredient step 0.1');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000114'), '(1.225000,1.500000)', 'POP-09B raw 1.225 kg uses unconventional Ingredient step 0.5');
 select is((select count(*) from atlas_planning.confirmed_need_line_revisions r where r.theoretical_quantity=(select sum(c.controlled_contribution_quantity) from atlas_planning.confirmed_need_line_revision_contributions c where c.confirmed_need_line_revision_id=r.confirmed_need_line_revision_id)), 9::bigint, 'POP-10 every raw revision total remains its exact membership sum');
-select is((select jsonb_agg(theoretical_quantity order by theoretical_need_line_id) from atlas_planning.theoretical_need_lines where need_generation_run_id='d4600000-0000-0000-0000-000000001000'), '[0.040000,0.040000,0.025500,0.105000,1.225000,228.000000,3.800000,13.000000,1.225000,1.225000]'::jsonb, 'POP-11 materialization does not rewrite theoretical source quantities');
+select is((select jsonb_agg(theoretical_quantity order by theoretical_need_line_id) from atlas_planning.theoretical_need_lines where need_generation_run_id='d4600000-0000-0000-0000-000000001000'), '[0.040000,0.040000,0.025500,0.105000,1.225000,2.010000,3.800000,13.000000,1.225000,1.225000]'::jsonb, 'POP-11 materialization does not rewrite theoretical source quantities');
 select is((select proposal_rounding_step from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000104'), 0.25::numeric, 'POP-11A revision snapshots the exact Ingredient rounding step');
 select is((select proposal_rounding_ingredient_version from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000104'), 1::bigint, 'POP-11B revision snapshots the exact Ingredient version');
 select is((select count(*) from atlas_planning.theoretical_need_lines where need_generation_run_id='d4600000-0000-0000-0000-000000001000'), 10::bigint, 'POP-12 materialization neither adds nor removes theoretical lines');
@@ -774,7 +774,7 @@ select pg_temp.proposal_seed_run(
 );
 select pg_temp.proposal_seed_run(
   'd4600000-0000-0000-0000-000000004600', 'd4600000-0000-0000-0000-000000004601', 'd4600000-0000-0000-0000-000000004602',
-  '2026-09-17', '2026-09-17', jsonb_build_array(jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000004701','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000115','unit_id','d4600000-0000-0000-0000-000000000018','quantity','1'))
+  '2026-09-17', '2026-09-17', jsonb_build_array(jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000004701','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000115','unit_id','d4600000-0000-0000-0000-000000000018','quantity','2.01'))
 );
 update atlas_admin.ingredients
 set order_step = null
@@ -860,6 +860,61 @@ select is(
   jsonb_build_object('theoretical','0.080000','proposal','0.100000','step',null),
   'POP-36 legacy null-snapshot readback retains the stored proposal fallback'
 );
+
+select results_eq(
+  $$select atlas_core.planning_need_proposal(raw, step, 2) from
+    (values (1,1.84,0.1),(2,1.91,0.1),(3,2.01,0.1),(4,2.49,0.1),(5,228,0.1),(6,13,6)) t(n,raw,step) order by n$$,
+  $$values (1.9::numeric),(2),(2),(3),(228),(18)$$,
+  'V1 threshold is inclusive after the Ingredient ceiling; positive halves round up');
+select is(atlas_core.planning_need_proposal(2.01, 0.1, 3), 2.1::numeric, 'A later threshold can retain the same step ceiling below its cutoff');
+select throws_ok($$select atlas_core.planning_need_proposal(2.01,0.3,2,0.3)$$,
+  'PNR01','Proposal is incompatible with the confirmation step','Incompatible whole result fails closed');
+select ok(not has_function_privilege('authenticated','atlas_core.planning_need_proposal(numeric,numeric,numeric,numeric)','EXECUTE'),
+  'Proposal arithmetic is internal');
+select is((select read_line->>'proposal_whole_round_from' from proposal_results r
+  cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line
+  where r.result_name='legacy-readback' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000105'),
+  '2.000000','New batch readback exposes its own cutoff');
+select is((select read_line->>'proposed_confirmed_quantity' from proposal_results r
+  cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line
+  where r.result_name='legacy-readback' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000105'),
+  '2.000000','Confirmed readback retains the V1 proposal');
+select throws_ok($$update atlas_planning.confirmed_need_batches set proposal_whole_round_from=3
+  where origin_need_generation_run_id='d4600000-0000-0000-0000-000000001000'$$,'23514',
+  'Confirmed Need batch origin identity is immutable','A batch retains its original rounding rule');
+
+-- Simulate a pre-rollout batch using the same 2.01 kg input.
+set local session_replication_role=replica;
+update atlas_planning.confirmed_need_batches set proposal_whole_round_from=null
+where origin_need_generation_run_id='d4600000-0000-0000-0000-000000001000';
+set local session_replication_role=origin;
+set local role authenticated;
+insert into proposal_results select 'old-rule-readback',atlas_api.get_confirmed_need_review(
+  pg_temp.proposal_read((response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid))
+from proposal_results where result_name='examples';
+reset role;
+select is((select read_line->>'proposed_confirmed_quantity' from proposal_results r
+  cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line
+  where r.result_name='old-rule-readback' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000105'),
+  '2.100000','Pre-rollout batch readback retains its old proposal under the same raw quantity and step');
+
+-- The step ceiling of 2.1 is representable at 0.3, but the whole result 2 is not.
+set local session_replication_role=replica;
+update atlas_admin.ingredients set order_step=0.3
+where ingredient_id='d4600000-0000-0000-0000-000000000115';
+update atlas_planning.planning_quantity_policy_revisions set planning_step=0.3
+where planning_quantity_policy_revision_id='d4600000-0000-0000-0000-000000000034';
+set local session_replication_role=origin;
+set local role authenticated;
+insert into proposal_results values ('whole-step-incompatible',
+  atlas_api.create_confirmed_needs_from_generation(pg_temp.proposal_request(
+  'd4600000-0000-0000-0000-000000004600','d4600000-0000-0000-0000-000000004904','whole-step-incompatible')));
+reset role;
+select is((select response->>'error_code' from proposal_results where result_name='whole-step-incompatible'),
+  'INGREDIENT_ROUNDING_STEP_INCOMPATIBLE','Materialization reports the incompatible rounded quantity');
+select is((select count(*) from atlas_planning.confirmed_need_batches
+  where origin_need_generation_run_id='d4600000-0000-0000-0000-000000004600'),0::bigint,
+  'Incompatible rounded quantity leaves no partial batch');
 
 select * from finish();
 rollback;

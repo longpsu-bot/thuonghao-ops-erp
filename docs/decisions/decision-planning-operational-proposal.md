@@ -7,7 +7,27 @@
 **Approval:** Product Owner, task authorization
 `PLANNING-OPERATIONAL-PROPOSAL-01`.
 
-## Decision
+## Quy tắc hiện hành và cách thay đổi (20/11/2026)
+
+Quy tắc V1 áp dụng cho **đề xuất vận hành của phiếu nhu cầu lập mới**. Atlas cộng các nguồn của cùng dòng nhu cầu (cùng ngày, trường, điểm giao, nguyên liệu và đơn vị). Sau đó:
+
+1. Làm tròn tổng lên đến bội số gần nhất của bước nguyên liệu (`Ingredient.order_step`).
+2. Nếu kết quả bước 1 nhỏ hơn 2, giữ kết quả đó. Từ 2 trở lên, làm tròn đến số nguyên gần nhất; phần lẻ đúng 0,5 làm tròn lên. Ngưỡng tính theo đơn vị của dòng nhu cầu.
+
+| Nhu cầu gốc | Bước nguyên liệu | Sau bước 1 | Đề xuất |
+| ----------: | ---------------: | ---------: | ------: |
+|     1,84 kg |           0,1 kg |     1,9 kg |  1,9 kg |
+|     1,91 kg |           0,1 kg |       2 kg |    2 kg |
+|     2,01 kg |           0,1 kg |     2,1 kg |    2 kg |
+|     2,49 kg |           0,1 kg |     2,5 kg |    3 kg |
+
+Đề xuất có thể thấp hơn nhu cầu gốc. Nhân viên có thể xem cả hai số tại **Xác nhận nhu cầu → Xem cách hình thành nhu cầu**. Số lượng nhân viên tự nhập vẫn phải khớp bước xác nhận của đơn vị. Nếu đề xuất tự động không biểu diễn được theo bước xác nhận, Atlas báo lỗi và hủy lần lập phiếu.
+
+**Đổi ngưỡng cho phiếu mới.** Tạo migration mới thay giá trị trả về của `atlas_core.new_need_whole_round_from()`. Ví dụ, trả về `3::numeric` để bắt đầu làm tròn đến số nguyên từ 3 đơn vị, hoặc `NULL::numeric` để quay về chỉ làm tròn lên theo bước nguyên liệu. Ngưỡng có giá trị từ 1 trở lên. Ghi ngày áp dụng và ví dụ đã duyệt vào mục này. Cập nhật và chạy bộ kiểm thử [planning_operational_proposal.sql](../../supabase/tests/planning_operational_proposal.sql), gồm trường hợp dưới ngưỡng, đúng ngưỡng, làm tròn xuống, điểm giữa và đọc lại phiếu cũ trước khi triển khai lên Staging.
+
+**Giữ lịch sử.** Mỗi phiếu lưu ngưỡng khi lập tại `atlas_planning.confirmed_need_batches.proposal_whole_round_from`. Phiếu cũ có ngưỡng `NULL` giữ cách tính trước đây, kể cả khi mở lại hoặc tạo phiên bản kế tiếp trong cùng phiếu. Số gốc, quyết định nhân viên và đơn mua đã phát hành được giữ nguyên. Nếu đổi **công thức** (chẳng hạn đổi cách xử lý 0,5), hãy lưu phiên bản công thức cho phiếu mới và giữ hàm tính cũ cho lịch sử. Hàm `atlas_core.planning_need_proposal` hiện phục vụ cả lập phiếu và đọc lại. [Migration gốc](../../supabase/migrations/20261120100000_planning_v1_need_rounding.sql)
+
+## Original decision (23 September 2026)
 
 Atlas keeps three quantity meanings distinct in school-catering Confirmed Need:
 
