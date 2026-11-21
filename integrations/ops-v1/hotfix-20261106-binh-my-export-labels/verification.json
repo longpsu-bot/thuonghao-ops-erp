@@ -1,0 +1,234 @@
+{
+  "checked_at": "2026-11-06",
+  "source_project": "qnthofvccilhnefdcxnz",
+  "source_range": ["2026-11-02", "2026-11-06"],
+  "baseline": "Four actual retained query probes fail the requested labels before the patch.",
+  "candidate_results": [
+    {
+      "query": "q_po_grouped_school_breakdown_from_po",
+      "selected": "[]",
+      "row_count": 1213,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_po_grouped_supplier_agg_from_po",
+      "selected": "[]",
+      "row_count": 1213,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_po_grouped_ingredient_breakdown_from_po",
+      "selected": "[]",
+      "row_count": 1213,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines_grouped",
+      "selected": "[]",
+      "row_count": 1149,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG",
+          "group_name_xlsx": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI",
+          "group_name_xlsx": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines_grouped",
+      "selected": "[8]",
+      "row_count": 65,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG",
+          "group_name_xlsx": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines_grouped",
+      "selected": "[9]",
+      "row_count": 65,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "9",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI",
+          "group_name_xlsx": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines_grouped",
+      "selected": "[8,9]",
+      "row_count": 130,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG",
+          "group_name_xlsx": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "entity_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI",
+          "group_name_xlsx": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines",
+      "selected": "[]",
+      "row_count": 1215,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "school_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG",
+          "school_full_name": "TRƯỜNG TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "school_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI",
+          "school_full_name": "TRƯỜNG TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines",
+      "selected": "[8]",
+      "row_count": 65,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "school_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG",
+          "school_full_name": "TRƯỜNG TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines",
+      "selected": "[9]",
+      "row_count": 65,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "9",
+          "school_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI",
+          "school_full_name": "TRƯỜNG TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_dispatch_lines",
+      "selected": "[8,9]",
+      "row_count": 130,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "school_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG",
+          "school_full_name": "TRƯỜNG TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "school_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI",
+          "school_full_name": "TRƯỜNG TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    },
+    {
+      "query": "q_po_school_breakdown_from_po",
+      "selected": "[]",
+      "row_count": 1216,
+      "non_label_deltas": 0,
+      "unrelated_deltas": 0,
+      "labels_pass": true,
+      "order_pass": true,
+      "target_labels": [
+        {
+          "id": "8",
+          "school_name": "TIỂU HỌC BÌNH MỸ - BÌNH DƯƠNG"
+        },
+        {
+          "id": "9",
+          "school_name": "TIỂU HỌC BÌNH MỸ - CỦ CHI"
+        }
+      ]
+    }
+  ],
+  "independent_review": "No blocking findings. Generated output, 8 label-only source lines, group precedence, 6 rollback round trips, 39 drift rejection cases and SELECT-only probes reviewed.",
+  "retool_apply": "All six query texts saved in production/main/Latest and copied back equal to after.json; no Supabase writes."
+}
