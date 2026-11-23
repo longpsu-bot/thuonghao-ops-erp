@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(76);
+select plan(81);
 
 set local session_replication_role = replica;
 
@@ -325,7 +325,7 @@ select is((select response#>>'{result_counts,created_confirmed_need_line_count}'
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000101'), '(0.080000,0.100000)', 'POP-03 aggregate 0.04 + 0.04 is rounded once by Ingredient step 0.1');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000102'), '(0.025500,0.100000)', 'POP-04 raw 0.0255 kg uses Ingredient step 0.1, not H1A 0.01');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000103'), '(0.105000,0.200000)', 'POP-05 raw 0.105 kg uses Ingredient step 0.1');
-select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000104'), '(1.225000,1.250000)', 'POP-06 raw 1.225 kg uses unconventional Ingredient step 0.25');
+select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000104'), '(1.225000,1.300000)', 'POP-06 raw 1.225 kg ceilings to 1.25 at step 0.25 then rounds to 1.3 kg');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000105'), '(2.010000,2.000000)', 'POP-07 raw 2.01 kg at step 0.1 proposes 2 kg');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000106'), '(3.800000,4.000000)', 'POP-08 raw count 3.8 proposes 4');
 select is((select row(theoretical_quantity, confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000107'), '(13.000000,18.000000)', 'POP-09 raw count 13 uses Ingredient step 6');
@@ -516,7 +516,7 @@ select is((select response->'preview'->>'error_code' from proposal_results where
 select ok((select response->'preview'->>'preview_hash' is null and response->'preview'->'blockers'->0 ? 'replacement_quantity' is false from proposal_results where result_name='preview-invalid-kg'), 'POPD-05 invalid human input returns no hash or replacement quantity');
 select is((select response->'preview'->>'error_code' from proposal_results where result_name='preview-invalid-count'), 'QUANTITY_NOT_REPRESENTABLE', 'POPD-06 human 17.5 at H1A count step 1 fails closed despite Ingredient proposal step 6');
 select is((select row(preview_line->>'confirmed_quantity_after',preview_line->>'planning_step',preview_line->>'planning_tick_count',preview_line->>'decision_kind')::text from proposal_results r cross join lateral jsonb_array_elements(r.response->'preview'->'ordered_preview_lines') preview_line where r.result_name='preview-valid-count' and (preview_line->>'confirmed_need_line_id')::uuid=(select confirmed_need_line_id from atlas_planning.confirmed_need_lines where ingredient_id='d4600000-0000-0000-0000-000000000107' and confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples'))), '(17.000000,1.000000,17,ADJUSTED_QUANTITY_CONFIRMED)', 'POPD-06A human count 17 is valid under H1A 1 even when the Ingredient proposal step is 6');
-select is((select row(preview_line->>'confirmed_quantity_after',preview_line->>'planning_step',preview_line->>'planning_tick_count',preview_line->>'decision_kind')::text from proposal_results r cross join lateral jsonb_array_elements(r.response->'preview'->'ordered_preview_lines') preview_line where r.result_name='preview-valid' and (preview_line->>'confirmed_need_line_id')::uuid=(select confirmed_need_line_id from atlas_planning.confirmed_need_lines where ingredient_id='d4600000-0000-0000-0000-000000000104' and confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples'))), '(1.250000,0.010000,125,UNCHANGED_PROPOSAL_ACCEPTED)', 'POPD-07 an Ingredient-rounded proposal remains exactly representable by H1A');
+select is((select row(preview_line->>'confirmed_quantity_after',preview_line->>'planning_step',preview_line->>'planning_tick_count',preview_line->>'decision_kind')::text from proposal_results r cross join lateral jsonb_array_elements(r.response->'preview'->'ordered_preview_lines') preview_line where r.result_name='preview-valid' and (preview_line->>'confirmed_need_line_id')::uuid=(select confirmed_need_line_id from atlas_planning.confirmed_need_lines where ingredient_id='d4600000-0000-0000-0000-000000000104' and confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples'))), '(1.300000,0.010000,130,UNCHANGED_PROPOSAL_ACCEPTED)', 'POPD-07 an Ingredient-rounded proposal remains exactly representable by H1A');
 select ok((select response->>'success'='true' and response#>>'{authoritative_readback,authoritative_batch_status}'='DRAFT_REVIEW' from proposal_results where result_name='save'), 'POPD-08 first Save succeeds and remains in Draft review');
 select is((select jsonb_object_agg(decision_kind, line_count) from (select decision_kind, count(*)::integer line_count from atlas_planning.confirmed_need_line_decisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples') group by decision_kind) counts), jsonb_build_object('ADJUSTED_QUANTITY_CONFIRMED',1,'UNCHANGED_PROPOSAL_ACCEPTED',8), 'POPD-09 first Save creates eight accepted proposals and one explicit adjustment');
 select is((select jsonb_object_agg(reason_code, line_count) from (select reason_code, count(*)::integer line_count from atlas_planning.confirmed_need_line_decisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples') group by reason_code) counts), jsonb_build_object('OPERATIONAL_QUANTITY_ADJUSTMENT',1,'PROPOSAL_ACCEPTED',8), 'POPD-10 system quantization never creates a human Planning-step adjustment');
@@ -882,6 +882,37 @@ select is((select read_line->>'proposed_confirmed_quantity' from proposal_result
 select throws_ok($$update atlas_planning.confirmed_need_batches set proposal_whole_round_from=3
   where origin_need_generation_run_id='d4600000-0000-0000-0000-000000001000'$$,'23514',
   'Confirmed Need proposal rounding threshold is immutable','A batch retains its original rounding rule');
+
+select results_eq(
+  $$select atlas_core.unit_need_proposal(raw, step, 2, kg) from
+    (values (1,1.21,0.25,true),(2,1.21,0.25,false),(3,0.41,0.1,false),(4,0.12,0.1,false),
+            (5,1.91,0.1,true),(6,2.49,0.1,true),(7,2.01,0.1,true),(8,1.21,0.25,null)) t(n,raw,step,kg) order by n$$,
+  $$values (1.3::numeric),(1),(1),(0),(2),(3),(2),(1.25)$$,
+  'Unit-aware Generation rounds the aggregate after ingredient stepping; the threshold-only generation preserves its old scale');
+select is((select read_line->>'proposal_is_kilogram' from proposal_results r
+  cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line
+  where r.result_name='review' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000106'),
+  'false','Readback identifies the whole-unit rule for a piece-count line');
+select throws_ok($$update atlas_planning.confirmed_need_batches set proposal_kg_unit_ids='{}'
+  where origin_need_generation_run_id='d4600000-0000-0000-0000-000000001000'$$,'23514',
+  'Confirmed Need proposal rounding threshold is immutable','Generated batch freezes its kilogram unit identities');
+
+-- Simulate the 20 November formula and read back a sub-threshold kg proposal with a quarter-kilo step.
+set local session_replication_role=replica;
+update atlas_planning.confirmed_need_batches set proposal_kg_unit_ids=null
+where origin_need_generation_run_id='d4600000-0000-0000-0000-000000001000';
+set local session_replication_role=origin;
+set local role authenticated;
+insert into proposal_results select 'threshold-only',atlas_api.get_confirmed_need_review(
+  pg_temp.proposal_read((response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid))
+from proposal_results where result_name='examples';
+reset role;
+select is((select read_line->>'proposed_confirmed_quantity' from proposal_results r
+  cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line
+  where r.result_name='threshold-only' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000104'),
+  '1.250000','Existing threshold-only batches retain a 1.25 kg proposal');
+select ok(not has_function_privilege('authenticated','atlas_core.unit_need_proposal(numeric,numeric,numeric,boolean,numeric)','EXECUTE'),
+  'Unit-aware arithmetic remains private');
 
 -- Simulate a pre-rollout batch using the same 2.01 kg input.
 set local session_replication_role=replica;

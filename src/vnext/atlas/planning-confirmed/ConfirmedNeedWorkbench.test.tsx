@@ -1050,6 +1050,7 @@ describe("Confirmed Need Chakra operator surface", () => {
         proposed_confirmed_quantity: "0.100000",
         proposal_rounding_step: "0.100000",
         proposal_whole_round_from: "2.000000",
+        proposal_is_kilogram: true,
       });
       fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
       Object.assign(fixture.need.grouped_requirements[0]!, {
@@ -1095,6 +1096,9 @@ describe("Confirmed Need Chakra operator surface", () => {
       name: "Cách hình thành nhu cầu",
     });
     expect(evidence).toHaveTextContent("Từ 2 kg sau bước trên");
+    expect(evidence).toHaveTextContent(
+      "Dưới 2 kg, làm tròn đến một chữ số thập phân.",
+    );
     const persistentActions = screen.getByRole("group", {
       name: "Thao tác xác nhận nhu cầu",
     });

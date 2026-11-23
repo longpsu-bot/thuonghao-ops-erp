@@ -104,7 +104,7 @@ For revisions with D-046 snapshot evidence, readback derives
 `ceil(theoretical_quantity / proposal_rounding_step) * proposal_rounding_step`,
 then rounds the result to the nearest whole unit (half up) if it reaches the batch's
 `proposal_whole_round_from`. This additional read-only line field is an exact decimal
-string, initially `"2.000000"` for new batches. Null retains the original step ceiling.
+string, initially `"2.000000"` for new batches. With the unit-aware policy, the read-only nullable boolean `proposal_is_kilogram` identifies the rounding rule captured at generation. Below the threshold kg rounds to tenths, and all other units round to integers regardless of quantity. When the boolean is null the previous threshold-only formula applies. A null threshold retains the original step ceiling.
 It never substitutes a later human adjustment for the proposal. Legacy
 revisions with a null snapshot pair retain the previous
 `revision.confirmed_quantity` fallback.
@@ -153,7 +153,7 @@ Per [D-046](../decisions/decision-planning-operational-proposal.md), the
 materialized proposal was already derived from the exact grouped raw requirement
 with PostgreSQL
 `ceil(total / ingredient.order_step) * ingredient.order_step` followed by the
-batch's snapshotted whole-rounding threshold where applicable. The snapshotted
+batch's snapshotted unit rounding rule where applicable. The snapshotted
 Ingredient step explains proposal rounding; the effective H1A step below
 governs only human-input representability. That system derivation is not a
 human adjustment.
