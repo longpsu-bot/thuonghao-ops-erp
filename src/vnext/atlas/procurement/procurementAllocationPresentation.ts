@@ -1,5 +1,4 @@
 import {
-  allocationFamilyUnitLabel,
   purchaseOrderLineUnitLabel,
   type AllocationFamilyRow,
   type SchoolCateringPurchaseOrder,
@@ -7,15 +6,16 @@ import {
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { compareAtlasText } from "../atlasTableSort";
 import { parseExactQuantity } from "./procurementExactQuantity";
+import { staffReference } from "../atlasStaffReference";
 
 export function purchaseOrderUnitText(
   status: SchoolCateringPurchaseOrder["status"],
   line: SchoolCateringPurchaseOrder["lines"][number],
 ) {
   // Old released lines can only carry the historical Unit code.
-  return allocationFamilyUnitLabel({
-    unit_code: purchaseOrderLineUnitLabel(status, line),
-  });
+  return (
+    staffReference(purchaseOrderLineUnitLabel(status, line)) ?? "Chưa có ĐVT"
+  );
 }
 
 export function derivedDefaultAllocation(row: AllocationFamilyRow) {

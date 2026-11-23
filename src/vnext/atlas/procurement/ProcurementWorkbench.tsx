@@ -250,7 +250,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     controller.loading ||
     (controller.stage === "allocation" && Boolean(controller.rangeError));
   const preparationDisabled =
-    controller.stale || Boolean(selected) || Boolean(pendingContinuation) || commandDisabled;
+    controller.stale ||
+    Boolean(selected) ||
+    Boolean(pendingContinuation) ||
+    commandDisabled;
   const canPrepare = controller.canPrepare && !preparationDisabled;
   const sourceMessages = procurementOperatorMessages(
     [
@@ -773,8 +776,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           >
                             {multiDay && (
                               <Field.Root
-                                w="auto"
-                                minW="0"
+                                w="var(--atlas-layout-auto, auto)"
+                                minW="var(--atlas-layout-zero, 0)"
                                 disabled={preparationDisabled}
                               >
                                 <Field.Label>Ngày chuẩn bị đơn mua</Field.Label>
@@ -917,9 +920,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                                 {procurementOperatorMessages(
                                   preparation.blockers,
                                   "Hoàn tất phân bổ trước khi lên đơn.",
-                                ).join(" ") || (preparation.ready && !preparation.allowed
-                                  ? "Bạn chưa có quyền chuẩn bị đơn mua cho ngày này."
-                                  : "Chưa đủ dữ liệu để chuẩn bị đơn mua cho ngày này.")}
+                                ).join(" ") ||
+                                  (preparation.ready && !preparation.allowed
+                                    ? "Bạn chưa có quyền chuẩn bị đơn mua cho ngày này."
+                                    : "Chưa đủ dữ liệu để chuẩn bị đơn mua cho ngày này.")}
                               </Text>
                             )}
                         </Flex>

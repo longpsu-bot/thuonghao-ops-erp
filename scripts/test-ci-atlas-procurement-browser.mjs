@@ -668,12 +668,12 @@ try {
   );
   assert.equal(
     await evaluate(
-      `document.querySelector('select[aria-label="Phạm vi thao tác"]').value`,
+      `document.querySelector('select[data-po-action-scope]').value`,
     ),
     "visible",
   );
   await evaluate(
-    `(()=>{const scope=document.querySelector('select[aria-label="Phạm vi thao tác"]');scope.value='loaded';scope.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+    `(()=>{const scope=document.querySelector('select[data-po-action-scope]');scope.value='loaded';scope.dispatchEvent(new Event('change',{bubbles:true}));})()`,
   );
   await confirmReviewedOrders({
     evaluate,

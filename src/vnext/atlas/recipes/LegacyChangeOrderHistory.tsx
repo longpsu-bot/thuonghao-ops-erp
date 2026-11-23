@@ -117,8 +117,8 @@ export function LegacyChangeOrderHistory({
                       </Table.Cell>
                       <Table.Cell verticalAlign="top">
                         {row.source_active
-                          ? "Đang áp dụng trong OPS v1. Chưa xác nhận hiệu lực trong Atlas."
-                          : "Đã ngừng áp dụng trong OPS v1. Chưa rõ ngày hủy."}
+                          ? "OPS v1 ghi nhận đang hoạt động. Chưa xác nhận hiệu lực trong Atlas."
+                          : "OPS v1 ghi nhận đã ngừng hoạt động. Chưa rõ ngày hủy."}
                       </Table.Cell>
                     </Table.Row>
                   ))}

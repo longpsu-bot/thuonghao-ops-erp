@@ -80,9 +80,9 @@ export function ProcurementOrderReviewDialog({
                   <Stack
                     as="ul"
                     aria-label="Danh sách đơn mua"
-                    gap="0"
+                    gap="var(--atlas-layout-zero, 0)"
                     listStyleType="none"
-                    p="0"
+                    p="var(--atlas-layout-zero, 0)"
                   >
                     {review.orders.map((order) => (
                       <Flex
@@ -94,7 +94,7 @@ export function ProcurementOrderReviewDialog({
                         borderBottomWidth="var(--atlas-layout-edge, 1px)"
                         borderColor="border.subtle"
                       >
-                        <Box minW="0">
+                        <Box minW="var(--atlas-layout-zero, 0)">
                           <Text textStyle="label" overflowWrap="anywhere">
                             {order.current_revision.supplier_name_snapshot ??
                               order.supplier.supplier_name}

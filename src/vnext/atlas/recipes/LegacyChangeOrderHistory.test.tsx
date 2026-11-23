@@ -58,7 +58,9 @@ it("discloses bounded read-only history without claiming cancellation or current
   details.open = true;
   fireEvent(details, new Event("toggle", { bubbles: true }));
   expect(
-    screen.getAllByText("Đã ngừng áp dụng trong OPS v1. Chưa rõ ngày hủy."),
+    screen.getAllByText(
+      "OPS v1 ghi nhận đã ngừng hoạt động. Chưa rõ ngày hủy.",
+    ),
   ).toHaveLength(25);
   expect(screen.getAllByText(/1.000001/)).toHaveLength(25);
   expect(screen.getAllByText("Loại trường: Tiểu học")).toHaveLength(25);
@@ -70,7 +72,9 @@ it("discloses bounded read-only history without claiming cancellation or current
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Xem thêm lịch sử" }));
   expect(
-    screen.getAllByText("Đã ngừng áp dụng trong OPS v1. Chưa rõ ngày hủy."),
+    screen.getAllByText(
+      "OPS v1 ghi nhận đã ngừng hoạt động. Chưa rõ ngày hủy.",
+    ),
   ).toHaveLength(27);
 });
 

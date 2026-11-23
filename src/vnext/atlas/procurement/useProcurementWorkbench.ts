@@ -605,8 +605,10 @@ export function useProcurementWorkbench({
     )
       return;
     const response = result && confirmedAllocationFromResult(result);
-    const day = response?.date_start === targetDate && response.date_end === targetDate
-      ? response : null;
+    const day =
+      response?.date_start === targetDate && response.date_end === targetDate
+        ? response
+        : null;
     // The backend can return just ready/allowed/blockers when the day has no single authorized batch.
     const source = day?.preparation ?? null;
     const blockers = [...(day?.blockers ?? []), ...(source?.blockers ?? [])];
@@ -616,13 +618,15 @@ export function useProcurementWorkbench({
     );
     let message = messages.length ? messages.join(" ") : null;
     if (!day)
-      message = result?.kind === "backend_error"
-        ? feedbackFromResult(result).message
-        : "Chưa tải được phân bổ của ngày này. Hãy kiểm tra lại.";
+      message =
+        result?.kind === "backend_error"
+          ? feedbackFromResult(result).message
+          : "Chưa tải được phân bổ của ngày này. Hãy kiểm tra lại.";
     else if (!message && !readyForPreparation(source, targetDate))
-      message = source?.ready && !source.allowed
-        ? "Bạn chưa có quyền chuẩn bị đơn mua cho ngày này."
-        : "Chưa đủ dữ liệu để chuẩn bị đơn mua cho ngày này.";
+      message =
+        source?.ready && !source.allowed
+          ? "Bạn chưa có quyền chuẩn bị đơn mua cho ngày này."
+          : "Chưa đủ dữ liệu để chuẩn bị đơn mua cho ngày này.";
     setDayPreparation({
       ...check,
       loading: false,

@@ -17,7 +17,8 @@ import { pantryIssueCopy } from "./pantryIssueCopy";
 import { staffReference } from "../atlasStaffReference";
 
 function attendanceSourceLocation(reference: string | null) {
-  const row = reference?.match(/:row:(\d+)$/);
+  const row =
+    reference?.match(/:row:(\d+)$/) ?? reference?.match(/^sheet:(\d+)$/);
   if (!row) return "Chưa có vị trí nguồn";
   const workbook = reference?.match(/^(.+\.xlsx?):(.+):row:\d+$/i);
   if (workbook && staffReference(workbook[1]) && staffReference(workbook[2]))
@@ -25,13 +26,18 @@ function attendanceSourceLocation(reference: string | null) {
   return `Dòng ${row[1]}`;
 }
 
-function reviewIssueMessage(issue: PlanningIssue) {
+function humanDiagnostic(issue: PlanningIssue) {
   const detail = staffReference(issue.message);
-  const humanDetail =
-    detail && detail !== issue.code && !/\b\w+_\w+\b|\brpc\b/i.test(detail);
+  return detail && detail !== issue.code && !/\b\w+_\w+\b|\brpc\b/i.test(detail)
+    ? detail
+    : null;
+}
+
+function reviewIssueMessage(issue: PlanningIssue) {
   return (
     knownPlanningIssueMessage(issue.code) ??
-    (humanDetail ? detail : planningIssueMessage(issue))
+    humanDiagnostic(issue) ??
+    planningIssueMessage(issue)
   );
 }
 export function PlanningSourceReview({
@@ -201,7 +207,7 @@ export function PlanningSourceReview({
                   color="status.warning"
                   cursor="var(--atlas-disclosure-cursor, pointer)"
                 >
-                  {reviewIssueMessage(warnings[0]!)} ({warnings.length} cảnh
+                  {planningIssueMessage(warnings[0]!)} ({warnings.length} cảnh
                   báo)
                 </Text>
                 {warnings.map((warning, index) => (
@@ -209,6 +215,10 @@ export function PlanningSourceReview({
                     <Text>
                       {attendanceSourceLocation(warning.source_row_reference)}
                     </Text>
+                    {!knownPlanningIssueMessage(warning.code) &&
+                      humanDiagnostic(warning) && (
+                        <Text color="fg.muted">{humanDiagnostic(warning)}</Text>
+                      )}
                   </Box>
                 ))}
               </Box>

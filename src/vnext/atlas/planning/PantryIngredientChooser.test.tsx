@@ -23,10 +23,15 @@ afterEach(() => {
 });
 const ingredients: PantryIngredient[] = Array.from({ length: 403 }, (_, i) => ({
   ingredient_id: `ingredient-${i}`,
-  ingredient_code: i >= 400 ? `RM-${i}` : `NL-${i}`,
+  ingredient_code:
+    i === 0 ? "v1-ingredient-342" : i >= 400 ? `RM-${i}` : `NL-${i}`,
   ingredient_name: i >= 400 ? "Rau muống" : `Nguyên liệu ${i}`,
   ingredient_status: i === 402 ? "INACTIVE" : "ACTIVE",
-  purchase_unit: { unit_id: "kg", unit_code: "kg", unit_name: "Kilôgam" },
+  purchase_unit: {
+    unit_id: "kg",
+    unit_code: i === 0 ? "v1-unit-27" : "kg",
+    unit_name: "Kilôgam",
+  },
 }));
 
 it("keeps multi-character search independent of selection and selects exact eligible UUIDs from 403 Ingredients", async () => {
@@ -52,6 +57,9 @@ it("keeps multi-character search independent of selection and selects exact elig
   const input = screen.getByRole("combobox", { name: "Nguyên liệu dòng 1" });
   await userEvent.click(input);
   expect(screen.getAllByRole("option")).toHaveLength(40);
+  expect(screen.getByRole("listbox")).not.toHaveTextContent(
+    /v1-ingredient-|v1-unit-/,
+  );
   expect(screen.getByRole("status")).toHaveTextContent("40 / 403");
   await userEvent.type(input, "RAU MUONG");
   expect(input).toHaveValue("RAU MUONG");

@@ -342,12 +342,13 @@ export function ProcurementOrdersStage({
         >
           {search && (onReleaseAll || onExportZip) && (
             <Field.Root
-              w={{ base: "full", lg: "auto" }}
+              w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
               disabled={disabled || exporting}
             >
               <Field.Label>Phạm vi thao tác</Field.Label>
               <NativeSelect.Root disabled={disabled || exporting}>
                 <NativeSelect.Field
+                  data-po-action-scope=""
                   value={includeHidden ? "loaded" : "visible"}
                   onChange={(event) =>
                     setIncludeHidden(event.target.value === "loaded")

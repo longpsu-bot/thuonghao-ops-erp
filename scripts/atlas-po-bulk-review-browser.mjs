@@ -27,7 +27,10 @@ export async function confirmReviewedOrders({
     assert(
       rows.some(
         (row) =>
-          row.includes(order.supplier.supplier_name) &&
+          row.includes(
+            order.current_revision.supplier_name_snapshot ??
+              order.supplier.supplier_name,
+          ) &&
           row.includes(date) &&
           (!order.document_number || row.includes(order.document_number)),
       ),

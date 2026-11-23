@@ -142,6 +142,8 @@ describe("Procurement vNext operator workbench", () => {
     const read = vi
       .spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations")
       .mockImplementation(async ({ payload }) => {
+        if (!payload || typeof payload !== "object" || Array.isArray(payload))
+          throw new Error("Expected a procurement scope");
         const day =
           payload.date_start === chosen && payload.date_end === chosen;
         return reviewSuccess({
