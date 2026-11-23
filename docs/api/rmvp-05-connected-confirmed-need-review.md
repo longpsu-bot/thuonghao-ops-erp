@@ -99,12 +99,7 @@ Each line contains its stable line ID, current revision ID/number, service date,
 
 Quantities, the Ingredient proposal-rounding step, and the H1A confirmation step are returned as exact decimal strings. A proposal is not authoritative confirmation until the stable line's current-decision pointer identifies an H1B1 decision.
 
-For revisions with D-046 snapshot evidence, readback derives
-`proposed_confirmed_quantity` as
-`ceil(theoretical_quantity / proposal_rounding_step) * proposal_rounding_step`,
-then rounds the result to the nearest whole unit (half up) if it reaches the batch's
-`proposal_whole_round_from`. This additional read-only line field is an exact decimal
-string, initially `"2.000000"` for new batches. With the unit-aware policy, the read-only nullable boolean `proposal_is_kilogram` identifies the rounding rule captured at generation. Below the threshold kg rounds to tenths, and all other units round to integers regardless of quantity. When the boolean is null the previous threshold-only formula applies. A null threshold retains the original step ceiling.
+For revisions with D-046 snapshot evidence, readback derives `proposed_confirmed_quantity` from the exact grouped theoretical quantity. Nullable read-only boolean `proposal_herb_ceiling` identifies the rule frozen at generation. True ceilings the raw kg quantity to 0.1 kg below the batch threshold (`proposal_whole_round_from`, initially 2 kg) and to 0.5 kg from that threshold. False ceilings to the snapshotted Ingredient order step. Null preserves historical behavior: the previous unit-aware formula when `proposal_is_kilogram` is set, the earlier threshold-only formula when only the threshold is set, and plain Ingredient ceiling when both are null.
 It never substitutes a later human adjustment for the proposal. Legacy
 revisions with a null snapshot pair retain the previous
 `revision.confirmed_quantity` fallback.
