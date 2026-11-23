@@ -58,6 +58,26 @@ describe("Allocation Unit display", () => {
   });
 });
 describe("PO Unit display", () => {
+  it("marks a missing historical label without exposing its technical Unit or using the current name", () => {
+    const f = createProcurementReviewFixture("po_released");
+    const line = f.orders.purchase_orders[0]!.lines[0]!;
+    line.unit_code_snapshot = "v1-unit-count";
+    line.unit_name_snapshot = null;
+    line.unit.unit_name = "Tên hiện tại";
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={f.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    const detail = screen.getByRole("region", { name: /Chi tiết đơn mua/ });
+    expect(detail).toHaveTextContent("60,000001 Chưa có ĐVT");
+    expect(detail).not.toHaveTextContent(/v1-unit-count|Tên hiện tại/);
+  });
   it("uses the backend Unit name for imported draft identifiers", () => {
     const f = createProcurementReviewFixture("po_draft");
     Object.assign(f.orders.purchase_orders[0]!.lines[0]!.unit, {

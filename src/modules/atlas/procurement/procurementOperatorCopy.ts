@@ -26,7 +26,12 @@ const reasonLabels: Record<string, string> = {
 };
 
 export function isTechnicalProcurementCode(value: string) {
-  return /^[A-Z][A-Z0-9_]*$/.test(value);
+  return (
+    /^[A-Z][A-Z0-9_]*$/.test(value) ||
+    /\b\w+_\w+\b|\brpc\b|\b[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}\b|\b[\da-f]{32,}\b/i.test(
+      value,
+    )
+  );
 }
 
 export function procurementOperatorMessage(value: string, fallback: string) {

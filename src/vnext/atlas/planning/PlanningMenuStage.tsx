@@ -276,13 +276,6 @@ export function PlanningMenuStage({
                       <Text textStyle="helper">
                         {planningIssueMessage({ ...issue, message: "" })}
                       </Text>
-                      <Text
-                        textStyle="helper"
-                        color="fg.muted"
-                        overflowWrap="anywhere"
-                      >
-                        {issue.source_row_reference}
-                      </Text>
                     </Box>
                   ))}
               </Stack>

@@ -219,6 +219,10 @@ Every participating supplier has a removal control. Removing one updates the dra
 
 On tablet and desktop the allocation header pairs the ingredient and destination with the running balance, above aligned supplier, quantity and note columns. On phones the balance sits below the destination and notes expand beneath each supplier. Desktop footer buttons fit their labels.
 
+### Staff-facing evidence and purchase actions — 23 November 2026
+
+Identify each order by supplier, date and official number when one exists. Show the eligible target list before a bulk action. Keep source references, database keys, revision identifiers and imported technical unit codes out of staff labels and explanations. Keep the human-readable event, quantity or source available when it helps staff make a decision.
+
 ### Supplier allocation dialog — 20 November 2026
 
 A row opens one centered dialog over the list. It keeps the ingredient, school, date, unit and running total visible. Staff enter quantities directly. For a 100 kg requirement, entering 30 kg for one supplier and choosing “Tự cân bằng · 70 kg” on the next supplier fills its quantity. Saving returns staff to the original row after authoritative readback. Dismissing a changed draft asks whether to discard it. This replaces the split-pane layout described below.

@@ -79,6 +79,153 @@ const workbar = () =>
 const workbarControl = <Element extends HTMLElement>(selector: string) =>
   workbar().querySelector<Element>(selector)!;
 describe("Procurement vNext operator workbench", () => {
+  it("opens a single exception even if the current search hides it", async () => {
+    show("needs_reallocation");
+    const attention = await screen.findByRole("button", {
+      name: "Cần xử lý 1",
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
+      target: { value: "không khớp" },
+    });
+    fireEvent.click(attention);
+    expect(
+      await screen.findByRole("dialog", { name: "Phân bổ Gạo thơm" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    await waitFor(() => expect(attention).toHaveFocus());
+  });
+  it("shows every counted exception and excludes balanced rows and derived defaults", async () => {
+    const fixture = createProcurementReviewFixture();
+    const scenarios = [
+      "normal",
+      "ready",
+      "normal",
+      "needs_reallocation",
+      "rebalance",
+      "blocked",
+    ] as const;
+    fixture.allocation.rows = scenarios.map((scenario, index) => {
+      const row = reviewFamily(scenario);
+      return {
+        ...row,
+        ingredient_name: "Mặt hàng " + index,
+        recommendation: index === 2 ? null : row.recommendation,
+        family: { ...row.family, source_fingerprint: "item-" + index },
+      };
+    });
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          initialServiceDate={reviewDate}
+          authSubject="operator"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Cần xử lý 4" }));
+    const table = within(
+      screen.getByRole("table", { name: "Phân bổ nhà cung ứng" }),
+    );
+    expect(table.getAllByRole("row")).toHaveLength(5);
+    for (const index of [2, 3, 4, 5])
+      expect(table.getByText("Mặt hàng " + index)).toBeVisible();
+    expect(table.queryByText("Mặt hàng 0")).toBeNull();
+    expect(table.queryByText("Mặt hàng 1")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Cần xử lý 4" }));
+    expect(table.getAllByRole("row")).toHaveLength(7);
+  });
+  it("checks a chosen day, prepares its current batch and returns to the retained weekly allocation", async () => {
+    const fixture = createProcurementReviewFixture("ready");
+    const end = "2026-09-16";
+    const chosen = "2026-09-12";
+    const read = vi
+      .spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations")
+      .mockImplementation(async ({ payload }) => {
+        if (!payload || typeof payload !== "object" || Array.isArray(payload))
+          throw new Error("Expected a procurement scope");
+        const day =
+          payload.date_start === chosen && payload.date_end === chosen;
+        return reviewSuccess({
+          ...fixture.allocation,
+          date_start: payload.date_start,
+          date_end: payload.date_end,
+          preparation: day
+            ? {
+                ...fixture.allocation.preparation!,
+                service_date: chosen,
+                confirmed_need_batch_id: "selected-day",
+                expected_version: 9,
+              }
+            : null,
+        });
+      });
+    const orders = vi
+      .spyOn(fixture.procurementApi, "getPurchaseOrders")
+      .mockResolvedValue(
+        reviewSuccess({
+          ...fixture.orders,
+          date_start: chosen,
+          date_end: chosen,
+        }),
+      );
+    const prepare = vi.spyOn(
+      fixture.purchaseReviewApi,
+      "preparePurchaseOrders",
+    );
+    const release = vi.spyOn(fixture.procurementApi, "releasePurchaseOrder");
+    const opened = vi.fn();
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          ownerStage="allocation"
+          initialServiceDate={reviewDate}
+          initialRange={{ start: reviewDate, end }}
+          initialSchoolIds={["school-0"]}
+          onOpenOrders={opened}
+        />
+      </AtlasVNextProvider>,
+    );
+    const pickDay = await screen.findByRole("combobox", {
+      name: "Ngày chuẩn bị đơn mua",
+    });
+    fireEvent.change(pickDay, { target: { value: chosen } });
+    expect(read.mock.lastCall![0].payload).toMatchObject({
+      date_start: chosen,
+      date_end: chosen,
+      school_ids: [],
+    });
+    const action = await screen.findByRole("button", {
+      name: "Chuẩn bị đơn mua",
+    });
+    expect(
+      screen.getByText(
+        "Đơn mua sẽ được chuẩn bị cho tất cả trường trong ngày.",
+      ),
+    ).toBeVisible();
+    expect(prepare).not.toHaveBeenCalled();
+    fireEvent.click(action);
+    await waitFor(() => expect(opened).toHaveBeenCalledExactlyOnceWith(chosen));
+    expect(prepare.mock.calls[0]![0]).toMatchObject({
+      expected_version: 9,
+      payload: {
+        service_date: chosen,
+        confirmed_need_batch_id: "selected-day",
+      },
+    });
+    expect(orders.mock.lastCall![0].payload).toMatchObject({
+      date_start: chosen,
+      date_end: chosen,
+    });
+    expect(read.mock.lastCall![0].payload).toMatchObject({
+      date_start: reviewDate,
+      date_end: end,
+      school_ids: ["school-0"],
+    });
+    expect(release).not.toHaveBeenCalled();
+  });
   it("keeps a dirty modal draft on sibling invalidation until staff discard it", async () => {
     const fixture = createProcurementReviewFixture("manual_split");
     const read = vi.spyOn(fixture.purchaseReviewApi, "getConfirmedAllocations");
@@ -244,7 +391,9 @@ describe("Procurement vNext operator workbench", () => {
     await screen.findByRole("button", {
       name: /Thay đổi Gạo.*12\/09\/2026/,
     });
-    expect(screen.getByText("Chọn 1 ngày để chuẩn bị đơn mua.")).toBeVisible();
+    expect(
+      screen.getByRole("combobox", { name: "Ngày chuẩn bị đơn mua" }),
+    ).toHaveValue("");
     expect(
       screen.queryByRole("button", { name: "Chuẩn bị đơn mua" }),
     ).not.toBeInTheDocument();

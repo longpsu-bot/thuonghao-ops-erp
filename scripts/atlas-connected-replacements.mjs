@@ -1,5 +1,6 @@
 // Existing D-044 and School PXK commands through the real disposable operator UI.
 import assert from "node:assert/strict";
+import { confirmReviewedOrders } from "./atlas-po-bulk-review-browser.mjs";
 import {
   supplierQuantityFootprint,
   schoolQuantityFootprint,
@@ -276,7 +277,12 @@ export async function certifyConnectedReplacements({
     schoolQuantityFootprint(drafts, freshSchools),
     schoolQuantityFootprint(originalOrders, originalSchools),
   );
-  await clickOnce("Phát hành tất cả PO (2)");
+  await confirmReviewedOrders({
+    evaluate,
+    until,
+    action: "release",
+    orders: drafts,
+  });
   await until(
     () => evaluate("document.body.innerText.includes('Đã phát hành 2/2 PO.')"),
     "REPLACEMENT_PO_RELEASE_READBACK",

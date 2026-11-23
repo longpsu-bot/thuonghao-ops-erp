@@ -1,3 +1,4 @@
+import { staffReference } from "../atlasStaffReference";
 import {
   Box,
   Field,
@@ -231,8 +232,9 @@ export function PantrySchoolChooser({
                 >
                   <Text fontWeight="medium">{school.school_name}</Text>
                   <Text textStyle="helper" color="fg.muted">
-                    {school.default_delivery_location.location_name} ·{" "}
-                    {school.school_code}
+                    {school.default_delivery_location.location_name}
+                    {staffReference(school.school_code) &&
+                      ` · ${school.school_code}`}
                     {school.school_status === "ACTIVE"
                       ? ""
                       : " · Ngừng hoạt động"}

@@ -83,15 +83,11 @@ export function ConfirmedNeedCorrectionPanel({
             {historyOpen && (
               <>
                 {children}
-                <Text textStyle="helper" mt="sm" overflowWrap="anywhere">
-                  Lần phát hành gốc:{" "}
-                  {c.correctionRead.binding.expected_confirmed_need_release_id}
-                </Text>
-                <Text textStyle="helper" overflowWrap="anywhere">
-                  Bàn giao gốc:{" "}
+                <Text textStyle="helper" mt="sm">
                   {c.correctionRead.binding
-                    .expected_purchase_handoff_revision_id ??
-                    "Chưa có bàn giao"}
+                    .expected_purchase_handoff_revision_id
+                    ? "Nhu cầu đã được bàn giao cho bộ phận mua hàng."
+                    : "Nhu cầu chưa được bàn giao cho bộ phận mua hàng."}
                 </Text>
                 <Box overflowX="auto" mt="sm">
                   <Table.Root
@@ -106,7 +102,7 @@ export function ConfirmedNeedCorrectionPanel({
                         <Table.ColumnHeader>Trước → sau</Table.ColumnHeader>
                         <Table.ColumnHeader>Chênh lệch</Table.ColumnHeader>
                         <Table.ColumnHeader>
-                          Lý do / người ghi nhận
+                          Lý do / thời điểm ghi nhận
                         </Table.ColumnHeader>
                       </Table.Row>
                     </Table.Header>
@@ -122,7 +118,7 @@ export function ConfirmedNeedCorrectionPanel({
                             <Table.Cell>
                               {line
                                 ? `${line.school.name} · ${line.ingredient.name}`
-                                : evidence.confirmed_need_line_id}
+                                : "Chưa có tên trường và nguyên liệu"}
                             </Table.Cell>
                             <Table.Cell whiteSpace="nowrap">
                               {evidence.old_confirmed_quantity === null
@@ -147,39 +143,14 @@ export function ConfirmedNeedCorrectionPanel({
                               <Text>
                                 {evidence.reason_note ?? "Không có ghi chú"}
                               </Text>
-                              <Box as="details" textStyle="helper">
-                                <Box
-                                  as="summary"
-                                  cursor="var(--atlas-disclosure-cursor, pointer)"
-                                >
-                                  Người ghi nhận và dấu vết
-                                </Box>
-                                <Text overflowWrap="anywhere">
-                                  {evidence.decided_by_actor_id ?? "—"} ·{" "}
-                                  {evidence.decided_at
-                                    ? new Date(
-                                        evidence.decided_at,
-                                      ).toLocaleString("vi-VN", {
-                                        timeZone: "Asia/Ho_Chi_Minh",
-                                      })
-                                    : "—"}
+                              {evidence.decided_at && (
+                                <Text textStyle="helper" color="fg.muted">
+                                  {new Date(evidence.decided_at).toLocaleString(
+                                    "vi-VN",
+                                    { timeZone: "Asia/Ho_Chi_Minh" },
+                                  )}
                                 </Text>
-                                <Text overflowWrap="anywhere">
-                                  Quyết định:{" "}
-                                  {evidence.current_decision_id ?? "—"}
-                                </Text>
-                                <Text overflowWrap="anywhere">
-                                  Quyết định trước:{" "}
-                                  {evidence.predecessor_decision_id ?? "—"}
-                                </Text>
-                                <Text overflowWrap="anywhere">
-                                  Phiên bản dòng: {evidence.current_revision_id}
-                                </Text>
-                                <Text overflowWrap="anywhere">
-                                  Phiên bản trước:{" "}
-                                  {evidence.predecessor_revision_id ?? "—"}
-                                </Text>
-                              </Box>
+                              )}
                             </Table.Cell>
                           </Table.Row>
                         );

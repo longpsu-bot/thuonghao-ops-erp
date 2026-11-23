@@ -551,6 +551,7 @@ export function ChangeOrderWorkbench(
       {c.ready && !open && (
         <LegacyChangeOrderHistory
           rows={c.data.legacy_history ?? []}
+          schoolTypes={c.data.school_types}
           query={query}
           scope={scope}
         />

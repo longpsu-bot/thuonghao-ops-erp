@@ -536,7 +536,7 @@ export function fuzzyTextMatch(query: string, ...values: string[]) {
   );
 }
 
-export function planningIssueMessage(issue: PlanningIssue) {
+export function knownPlanningIssueMessage(code: string) {
   const messages: Record<string, string> = {
     EMPTY_WEEKLY_MENU: "Thực đơn tuần chưa có phân công hợp lệ.",
     EMPTY_ATTENDANCE: "Sĩ số tuần chưa có dòng hợp lệ.",
@@ -580,8 +580,12 @@ export function planningIssueMessage(issue: PlanningIssue) {
     ATTENDANCE_WITHOUT_MENU_ASSIGNMENT:
       "Có dòng sĩ số nhưng chưa có phân công thực đơn tương ứng.",
   };
+  return messages[code];
+}
+
+export function planningIssueMessage(issue: PlanningIssue) {
   return (
-    messages[issue.code] ??
+    knownPlanningIssueMessage(issue.code) ??
     "Dữ liệu chưa đạt kiểm tra. Hãy kiểm tra nguồn hoặc liên hệ hỗ trợ."
   );
 }

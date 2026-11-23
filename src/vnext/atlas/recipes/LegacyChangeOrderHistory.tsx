@@ -1,16 +1,21 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import type { LegacyRecipeChangeOrder } from "../bridges/recipeAdjustment";
+import type {
+  AdjustmentReference,
+  LegacyRecipeChangeOrder,
+} from "../bridges/recipeAdjustment";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
 import { actionLabels, scopeLabels } from "./changeOrderModel";
 
 export function LegacyChangeOrderHistory({
   rows,
+  schoolTypes,
   query,
   scope = "",
 }: {
   rows: LegacyRecipeChangeOrder[];
+  schoolTypes: AdjustmentReference[];
   query: string;
   scope?: string;
 }) {
@@ -71,22 +76,11 @@ export function LegacyChangeOrderHistory({
                     <Table.Row key={`${row.source_table}:${row.legacy_id}`}>
                       <Table.Cell verticalAlign="top">
                         {row.effective_from ?? "Không xác định"}
-                        <Box as="details" mt="xs">
-                          <Text
-                            as="summary"
-                            textStyle="helper"
-                            cursor="var(--atlas-pointer, pointer)"
-                          >
-                            Thông tin nguồn
+                        {row.source_created_at && (
+                          <Text textStyle="helper" color="fg.muted">
+                            Ngày ghi nhận: {row.source_created_at}
                           </Text>
-                          <Text textStyle="helper">
-                            {row.source_table} #{row.legacy_id}
-                          </Text>
-                          <Text textStyle="helper">
-                            Nguồn ghi nhận tạo:{" "}
-                            {row.source_created_at ?? "Không xác định"}
-                          </Text>
-                        </Box>
+                        )}
                       </Table.Cell>
                       <Table.Cell verticalAlign="top">
                         <Text>
@@ -100,12 +94,14 @@ export function LegacyChangeOrderHistory({
                         </Text>
                         {row.source_school_type_id && (
                           <Text textStyle="helper">
-                            Loại trường nguồn: {row.source_school_type_id}
+                            Loại trường:{" "}
+                            {schoolTypes.find(
+                              (type) =>
+                                type.school_type_code ===
+                                `v1-school-type-${row.source_school_type_id}`,
+                            )?.school_type_name ?? "Chưa xác định"}
                           </Text>
                         )}
-                        <Text textStyle="helper" color="fg.muted">
-                          Mã nguồn #{row.legacy_id}
-                        </Text>
                       </Table.Cell>
                       <Table.Cell verticalAlign="top">
                         <Text>
@@ -121,8 +117,8 @@ export function LegacyChangeOrderHistory({
                       </Table.Cell>
                       <Table.Cell verticalAlign="top">
                         {row.source_active
-                          ? "Nguồn active; chưa xác nhận hiệu lực Atlas"
-                          : "Nguồn inactive; không rõ ngày hủy"}
+                          ? "OPS v1 ghi nhận đang hoạt động. Chưa xác nhận hiệu lực trong Atlas."
+                          : "OPS v1 ghi nhận đã ngừng hoạt động. Chưa rõ ngày hủy."}
                       </Table.Cell>
                     </Table.Row>
                   ))}

@@ -492,6 +492,118 @@ describe("Procurement command safety", () => {
 });
 
 describe("Preparation and PO actions", () => {
+  it("keeps only the latest day's authority and rejects mismatched, blocked and unauthorized day reads", async () => {
+    const end = "2026-09-16";
+    const chosen = "2026-09-12";
+    const h = setup("ready", {
+      ownerStage: "allocation",
+      initialRange: { start: reviewDate, end },
+    });
+    await ready(h.result);
+    const older = deferred();
+    h.read.mockReturnValueOnce(older.promise);
+    let pending!: Promise<void>;
+    act(() => {
+      pending = h.result.current.checkPreparationDay(reviewDate, false);
+    });
+    const day = {
+      ...h.fixture.allocation,
+      date_start: chosen,
+      date_end: chosen,
+      preparation: {
+        ...h.fixture.allocation.preparation!,
+        service_date: chosen,
+        expected_version: 5,
+      },
+    };
+    for (const response of [
+      { ...day, date_end: end },
+      { ...day, preparation: { ...day.preparation, service_date: reviewDate } },
+      { ...day, preparation: null },
+      { ...day, blockers: ["ALLOCATION_IMBALANCED"] },
+      {
+        ...day,
+        preparation: { ...day.preparation, blockers: ["NO_ELIGIBLE_SUPPLIER"] },
+      },
+      { ...day, preparation: { ...day.preparation, ready: false } },
+      { ...day, preparation: { ...day.preparation, allowed: false } },
+    ]) {
+      h.read.mockResolvedValueOnce(reviewSuccess(response));
+      await act(async () =>
+        h.result.current.checkPreparationDay(chosen, false),
+      );
+      expect(h.result.current.dayPreparation?.message).toBeTruthy();
+      await act(async () => h.result.current.prepare(false));
+      expect(h.prepare).not.toHaveBeenCalled();
+    }
+    await act(async () => {
+      older.resolve(reviewSuccess(h.fixture.allocation));
+      await pending;
+    });
+    expect(h.result.current.dayPreparation?.date).toBe(chosen);
+    expect(h.result.current.canPrepare).toBe(false);
+    const denied = "Bạn không có quyền với toàn bộ nhu cầu này.";
+    h.read.mockResolvedValueOnce(
+      reviewSuccess({
+        ...day,
+        preparation: { ready: false, allowed: false, blockers: [denied] },
+      }),
+    );
+    await act(async () => h.result.current.checkPreparationDay(chosen, false));
+    expect(h.result.current.dayPreparation?.message).toBe(denied);
+    h.read.mockResolvedValueOnce(reviewSuccess(day));
+    await act(async () => h.result.current.checkPreparationDay(chosen, false));
+    expect(h.result.current.canPrepare).toBe(true);
+    await act(async () => h.result.current.prepare(true));
+    expect(h.prepare).not.toHaveBeenCalled();
+    await act(async () => h.result.current.reload());
+    expect(h.result.current.canPrepare).toBe(false);
+  });
+  it("recovers an unknown daily preparation by reading that day's orders and the original week without replay", async () => {
+    const chosen = "2026-09-12";
+    const range = { start: reviewDate, end: "2026-09-16" };
+    const onOpenOrders = vi.fn();
+    const h = setup("ready", {
+      ownerStage: "allocation",
+      initialRange: range,
+      onOpenOrders,
+    });
+    await ready(h.result);
+    h.read.mockResolvedValueOnce(
+      reviewSuccess({
+        ...h.fixture.allocation,
+        date_start: chosen,
+        date_end: chosen,
+        preparation: {
+          ...h.fixture.allocation.preparation!,
+          service_date: chosen,
+        },
+      }),
+    );
+    await act(async () => h.result.current.checkPreparationDay(chosen, false));
+    h.prepare.mockResolvedValueOnce(reviewUnknown);
+    await act(async () => h.result.current.prepare(false));
+    expect(h.result.current.locked).toBe(true);
+    expect(onOpenOrders).not.toHaveBeenCalled();
+    h.poRead.mockResolvedValueOnce(
+      reviewSuccess({
+        ...h.fixture.orders,
+        date_start: chosen,
+        date_end: chosen,
+      }),
+    );
+    await act(async () => h.result.current.reload());
+    expect(h.poRead.mock.lastCall![0].payload).toMatchObject({
+      date_start: chosen,
+      date_end: chosen,
+    });
+    expect(h.read.mock.lastCall![0].payload).toMatchObject({
+      date_start: range.start,
+      date_end: range.end,
+    });
+    expect(onOpenOrders).toHaveBeenCalledExactlyOnceWith(chosen);
+    expect(h.prepare).toHaveBeenCalledOnce();
+  });
   it("does not reuse single-day preparation authority in a multi-day scope", async () => {
     const h = setup("ready", {
       initialRange: { start: reviewDate, end: "2026-09-16" },

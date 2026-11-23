@@ -56,12 +56,14 @@ import {
 } from "../compactFilterFocus";
 import {
   allocationSchools,
+  allocationNeedsAttention,
   derivedDefaultAllocation,
 } from "./procurementAllocationPresentation";
 import type { ProcurementPxkImpactProps } from "./ProcurementPxkImpact";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
+    preparedOrderDay?: { date: string; id: string };
     needContinuation?: {
       id: string;
       range: AtlasOperatorDateRange;
@@ -82,6 +84,15 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps &
   };
 const preparationHelp =
   "Có thể chốt nhu cầu và tạo hoặc cập nhật đơn mua nháp. Chỉ khi phát hành đơn mua mới cam kết với nhà cung ứng.";
+
+function preparationDates(start: string, end: string) {
+  const first = Date.parse(start + "T00:00:00Z");
+  const last = Date.parse(end + "T00:00:00Z");
+  const day = 86_400_000;
+  return Array.from({ length: (last - first) / day + 1 }, (_, offset) =>
+    new Date(first + offset * day).toISOString().slice(0, 10),
+  );
+}
 export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
   const ownerId = useId();
@@ -94,6 +105,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       : "Đơn mua"
     : "Kế hoạch mua hàng";
   const [search, setSearch] = useState("");
+  const [viewedDayRequest, setViewedDayRequest] = useState<string>();
   const [exception, setException] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const portal = useAtlasPortalContainer();
@@ -181,6 +193,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     if (selectedKey && !selected && !controller.loading) setSelectedKey(null);
   }, [selectedKey, selected, controller.loading]);
   const rows = controller.allocation?.rows ?? [];
+  const attentionRows = rows.filter(allocationNeedsAttention);
   useAtlasWorkbenchStatus(props.onWorkspaceStatus, {
     unsaved: Boolean(selected && detailStatus.unsaved),
     blocked: controller.busy || controller.locked,
@@ -192,6 +205,8 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   });
   const visible = rows.filter((row) => {
     const derived = derivedDefaultAllocation(row);
+    if (exception === "attention" && !allocationNeedsAttention(row))
+      return false;
     if (exception === "unallocated" && (row.state !== "UNALLOCATED" || derived))
       return false;
     if (
@@ -234,14 +249,12 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     controller.busy ||
     controller.loading ||
     (controller.stage === "allocation" && Boolean(controller.rangeError));
-  const canPrepare =
-    !controller.stale &&
-    !multiDay &&
-    preparation?.ready &&
-    preparation.allowed &&
-    !selected &&
-    !pendingContinuation &&
-    !commandDisabled;
+  const preparationDisabled =
+    controller.stale ||
+    Boolean(selected) ||
+    Boolean(pendingContinuation) ||
+    commandDisabled;
+  const canPrepare = controller.canPrepare && !preparationDisabled;
   const sourceMessages = procurementOperatorMessages(
     [
       ...(controller.allocation?.warnings ?? []),
@@ -262,6 +275,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
     : "Tất cả trường";
   const exceptionSummary = {
     "": "Tất cả",
+    attention: "Tất cả ngoại lệ",
     unallocated: "Chưa phân bổ",
     needs_update: "Cần cập nhật",
     blocked: "Bị chặn",
@@ -545,6 +559,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                         onChange={(event) => setException(event.target.value)}
                       >
                         <option value="">Tất cả</option>
+                        <option value="attention">Tất cả ngoại lệ</option>
                         <option value="unallocated">Chưa phân bổ</option>
                         <option value="needs_update">Cần cập nhật</option>
                         <option value="blocked">Bị chặn</option>
@@ -642,6 +657,35 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               </Text>
             )}
             {!selected && statusMessages}
+            {controller.stage === "orders" &&
+              props.preparedOrderDay &&
+              props.preparedOrderDay.id !== viewedDayRequest && (
+                <Flex px="md" py="xs" align="center" gap="sm" wrap="wrap">
+                  <Text role="status">
+                    Đơn mua ngày{" "}
+                    {props.preparedOrderDay.date.split("-").reverse().join("/")}
+                    .
+                  </Text>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={
+                      controller.busy || controller.loading || controller.locked
+                    }
+                    onClick={() => {
+                      const target = props.preparedOrderDay!;
+                      setSearch("");
+                      controller.changeRange({
+                        start: target.date,
+                        end: target.date,
+                      });
+                      setViewedDayRequest(target.id);
+                    }}
+                  >
+                    Xem đơn ngày này
+                  </Button>
+                </Flex>
+              )}
             <Tabs.Content
               value={controller.stage}
               p="var(--atlas-layout-zero, 0)"
@@ -676,28 +720,53 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                           gap="sm"
                           wrap="wrap"
                         >
-                          <Text
-                            textStyle="helper"
-                            color="fg.muted"
+                          <Flex
+                            align="center"
+                            gap="xs"
                             flex={{ base: "0 1 auto", md: "1" }}
                           >
-                            Cần xử lý{" "}
-                            {
-                              rows.filter(
-                                (row) =>
-                                  row.state !== "BALANCED" &&
-                                  !derivedDefaultAllocation(row),
-                              ).length
-                            }{" "}
-                            · Đã đủ{" "}
-                            {
-                              rows.filter(
-                                (row) =>
-                                  row.state === "BALANCED" ||
-                                  Boolean(derivedDefaultAllocation(row)),
-                              ).length
-                            }
-                          </Text>
+                            {attentionRows.length ||
+                            exception === "attention" ? (
+                              <>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  aria-pressed={exception === "attention"}
+                                  disabled={
+                                    Boolean(selected) || commandDisabled
+                                  }
+                                  onClick={(event) => {
+                                    if (
+                                      exception === "attention" &&
+                                      !search.trim() &&
+                                      attentionRows.length !== 1
+                                    ) {
+                                      setException("");
+                                      return;
+                                    }
+                                    setSearch("");
+                                    setException("attention");
+                                    if (attentionRows.length === 1) {
+                                      rowTrigger.current = event.currentTarget;
+                                      setSelectedKey(
+                                        attentionRows[0]!.family
+                                          .source_fingerprint,
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Cần xử lý {attentionRows.length}
+                                </Button>
+                                <Text textStyle="helper" color="fg.muted">
+                                  Đã đủ {rows.length - attentionRows.length}
+                                </Text>
+                              </>
+                            ) : (
+                              <Text textStyle="helper" color="fg.muted">
+                                Cần xử lý 0 · Đã đủ {rows.length}
+                              </Text>
+                            )}
+                          </Flex>
                           <Flex
                             minW="var(--atlas-layout-zero, 0)"
                             align={{ base: "stretch", md: "center" }}
@@ -705,6 +774,41 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                             wrap="wrap"
                             flex={{ base: "0 1 auto", md: "initial" }}
                           >
+                            {multiDay && (
+                              <Field.Root
+                                w="var(--atlas-layout-auto, auto)"
+                                minW="var(--atlas-layout-zero, 0)"
+                                disabled={preparationDisabled}
+                              >
+                                <Field.Label>Ngày chuẩn bị đơn mua</Field.Label>
+                                <NativeSelect.Root size="sm">
+                                  <NativeSelect.Field
+                                    value={
+                                      controller.dayPreparation?.date ?? ""
+                                    }
+                                    onChange={(event) =>
+                                      void controller.checkPreparationDay(
+                                        event.target.value,
+                                        Boolean(selected),
+                                      )
+                                    }
+                                  >
+                                    <option value="" disabled>
+                                      Chọn ngày
+                                    </option>
+                                    {preparationDates(
+                                      controller.date,
+                                      controller.dateEnd,
+                                    ).map((value) => (
+                                      <option key={value} value={value}>
+                                        {value.split("-").reverse().join("/")}
+                                      </option>
+                                    ))}
+                                  </NativeSelect.Field>
+                                  <NativeSelect.Indicator />
+                                </NativeSelect.Root>
+                              </Field.Root>
+                            )}
                             {canPrepare && (
                               <Flex align="center" gap="xs">
                                 <Button
@@ -747,11 +851,6 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                                 </Popover.Root>
                               </Flex>
                             )}
-                            {multiDay && (
-                              <Text textStyle="helper" color="fg.muted">
-                                Chọn 1 ngày để chuẩn bị đơn mua.
-                              </Text>
-                            )}
                             {props.ownerStage === "allocation" &&
                               props.onOpenOrders && (
                                 <Button
@@ -767,9 +866,51 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                                 </Button>
                               )}
                           </Flex>
+                          {multiDay && controller.dayPreparation?.loading && (
+                            <Text
+                              role="status"
+                              textStyle="helper"
+                              color="fg.muted"
+                              w="full"
+                            >
+                              Đang kiểm tra phân bổ trong ngày…
+                            </Text>
+                          )}
+                          {multiDay && controller.dayPreparation?.message && (
+                            <Flex
+                              role="status"
+                              align="center"
+                              gap="xs"
+                              width="full"
+                              wrap="wrap"
+                            >
+                              <Text textStyle="helper" color="status.warning">
+                                {controller.dayPreparation.message}
+                              </Text>
+                              <Button
+                                variant="utility"
+                                size="sm"
+                                disabled={preparationDisabled}
+                                onClick={() =>
+                                  void controller.checkPreparationDay(
+                                    controller.dayPreparation!.date,
+                                    Boolean(selected),
+                                  )
+                                }
+                              >
+                                Kiểm tra lại ngày này
+                              </Button>
+                            </Flex>
+                          )}
+                          {canPrepare && controller.schoolIds.length > 0 && (
+                            <Text textStyle="helper" color="fg.muted" w="full">
+                              Đơn mua sẽ được chuẩn bị cho tất cả trường trong
+                              ngày.
+                            </Text>
+                          )}
                           {!selected &&
                             !multiDay &&
-                            !(preparation?.ready && preparation.allowed) &&
+                            !controller.canPrepare &&
                             preparation && (
                               <Text
                                 textStyle="helper"
@@ -779,7 +920,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                                 {procurementOperatorMessages(
                                   preparation.blockers,
                                   "Hoàn tất phân bổ trước khi lên đơn.",
-                                ).join(" ")}
+                                ).join(" ") ||
+                                  (preparation.ready && !preparation.allowed
+                                    ? "Bạn chưa có quyền chuẩn bị đơn mua cho ngày này."
+                                    : "Chưa đủ dữ liệu để chuẩn bị đơn mua cho ngày này.")}
                               </Text>
                             )}
                         </Flex>
@@ -870,7 +1014,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   disabled={controller.stale || commandDisabled}
                   search={search}
                   onAction={(order) => void controller.orderAction(order)}
-                  onReleaseAll={() => void controller.releaseAllOrders()}
+                  onReleaseAll={controller.releaseAllOrders}
                   bulkProgress={controller.bulkProgress}
                   onExportXlsx={props.onExportXlsx}
                   onExportPdf={props.onExportPdf}

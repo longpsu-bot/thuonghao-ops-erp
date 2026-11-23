@@ -30,7 +30,7 @@ afterEach(() => {
 const schools: PantrySchool[] = Array.from({ length: 50 }, (_, i) => ({
   ...createPlanningReviewFixture().pantry.schools[0]!,
   school_id: `school-${i}`,
-  school_code: `TH-${i}`,
+  school_code: i === 0 ? "v1-school-342" : `TH-${i}`,
   school_name: i >= 47 ? "Trường Nguyễn Du" : `Trường ${i}`,
   school_status: i === 49 ? "INACTIVE" : "ACTIVE",
 }));
@@ -67,6 +67,7 @@ it("searches fifty Schools by accent-folded name/reference and commits only the 
   const input = screen.getByRole("combobox", { name: "Trường cần thêm hàng" });
   fireEvent.focus(input);
   expect(await screen.findAllByRole("option")).toHaveLength(40);
+  expect(screen.getByRole("listbox")).not.toHaveTextContent("v1-school-342");
   expect(input).toHaveAttribute("data-part", "anchor");
   expect(document.getElementById(input.getAttribute("aria-controls")!)).toBe(
     screen.getByRole("listbox"),

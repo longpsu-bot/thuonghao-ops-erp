@@ -109,9 +109,27 @@ function openUtilities() {
 
 describe("K3 explicit released correction UI", () => {
   it("loads the source history on demand and leaves the released quantities locked", async () => {
-    show("released", {}, (f) =>
-      Object.assign(f.batch, createConfirmedNeedCorrectionFixture().batch),
-    );
+    show("released", {}, (f) => {
+      Object.assign(f.batch, createConfirmedNeedCorrectionFixture().batch);
+      Object.assign(f.batch.need_correction_authority!, {
+        current_lines: [
+          {
+            confirmed_need_line_id: "line-0",
+            current_revision_id: "private-revision",
+            predecessor_revision_id: "private-predecessor",
+            current_decision_id: "private-decision",
+            predecessor_decision_id: null,
+            old_confirmed_quantity: "99",
+            new_confirmed_quantity: "100",
+            difference: "1",
+            reason_code: null,
+            reason_note: "Tăng suất ăn",
+            decided_by_actor_id: "private-actor",
+            decided_at: "2026-09-07T07:00:00Z",
+          },
+        ],
+      });
+    });
     const input = await quantity();
     const summary = screen.getByText("Lịch sử xác nhận");
     expect(
@@ -126,6 +144,10 @@ describe("K3 explicit released correction UI", () => {
         name: "Lịch sử xác nhận và điều chỉnh",
       }),
     ).toBeVisible();
+    expect(screen.getByText("Tăng suất ăn")).toBeVisible();
+    expect(summary.parentElement).not.toHaveTextContent(
+      /b6500000-|private-|line-0|Phiên bản/,
+    );
     expect(input).toBeDisabled();
     await userEvent.click(summary);
     await waitFor(() =>

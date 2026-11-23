@@ -8,6 +8,7 @@ import {
 } from "../bridges/procurement";
 import type { ConfirmedNeedWorkbenchData } from "../bridges/confirmedNeed";
 import { formatExactQuantityForOperator } from "../procurement/procurementExactQuantity";
+import { purchaseOrderUnitText } from "../procurement/procurementAllocationPresentation";
 export function ConfirmedNeedIssuedOrders({
   api,
   authSubject,
@@ -114,7 +115,7 @@ export function ConfirmedNeedIssuedOrders({
                 {line.ingredient_name_snapshot ??
                   line.ingredient.ingredient_name}
                 : {formatExactQuantityForOperator(line.ordered_quantity)}{" "}
-                {line.unit_code_snapshot ?? line.unit.unit_code} ·{" "}
+                {purchaseOrderUnitText(order.status, line)} ·{" "}
                 {line.delivery_location.location_name}
               </Text>
             ))}

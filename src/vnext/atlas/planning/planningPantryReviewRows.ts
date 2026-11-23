@@ -1,4 +1,5 @@
 import { viDate, type JsonValue } from "../bridges/planning";
+import { staffReference } from "../atlasStaffReference";
 import type { PlanningSourcesController } from "./usePlanningSources";
 const record = (v: JsonValue | undefined) =>
   v && typeof v === "object" && !Array.isArray(v) ? v : null;
@@ -36,7 +37,8 @@ export function planningPantryReviewRows(
       `${r.requested_quantity ?? "—"} ${unit}`,
       purposeLabel,
       r.note,
-      r.source_request_reference,
+      typeof r.source_request_reference === "string" &&
+        staffReference(r.source_request_reference),
     ]
       .filter(Boolean)
       .join(" · ");

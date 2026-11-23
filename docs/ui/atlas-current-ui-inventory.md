@@ -94,6 +94,8 @@ changed-file formatting and the layout scan pass. This claims no hosted rollout.
 No API, permission, command, quantity, lifecycle, database or migration changes;
 rollback reverts this frontend/documentation change without altering business data.
 
+**Current purchase actions — 23 November 2026.** In Đơn mua, release and ZIP export open a list of the exact eligible orders. Search narrows the default list. Staff can explicitly include the full loaded period. In Phân bổ NCC, Cần xử lý locates exceptions and staff can prepare one selected day while keeping their weekly view. These behaviors supersede the October bulk-scope descriptions below. Staff see supplier names, schools, dates, quantities, units and official document numbers. Technical identifiers stay in the underlying evidence.
+
 **Button layout refinement — 23 October 2026:** The Owner approved a bounded
 presentation pass over the PO action band and similar workbench utilities.
 POs group the visible count, secondary bulk release and export controls on a

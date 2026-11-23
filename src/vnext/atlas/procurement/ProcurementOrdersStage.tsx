@@ -15,7 +15,6 @@ import { FileArrowDown, WarningCircle } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   canReleasePurchaseOrder,
-  purchaseOrderLineUnitLabel,
   procurementOperatorMessages,
   type PurchaseOrdersData,
   type SchoolCateringPurchaseOrder,
@@ -27,6 +26,12 @@ import {
   type ProcurementPxkImpactProps,
 } from "./ProcurementPxkImpact";
 import { focusFirstCompactFilter } from "../compactFilterFocus";
+import { purchaseOrderUnitText } from "./procurementAllocationPresentation";
+import {
+  ProcurementOrderReviewDialog,
+  type OrderReview,
+  type OrderReviewAction,
+} from "./ProcurementOrderReviewDialog";
 
 export type ProcurementExportMode =
   "all" | "details_ing" | "details_school" | "sum";
@@ -87,7 +92,7 @@ export function ProcurementOrdersStage({
   disabled: boolean;
   search: string;
   onAction: (order: SchoolCateringPurchaseOrder) => void;
-  onReleaseAll?: () => void;
+  onReleaseAll?: (orders: SchoolCateringPurchaseOrder[]) => void;
   bulkProgress?: { completed: number; total: number } | null;
   onExportXlsx?: ProcurementExport;
   onExportPdf?: ProcurementExport;
@@ -107,10 +112,13 @@ export function ProcurementOrdersStage({
   const [exportMode, setExportMode] = useState<ProcurementExportMode>("all");
   const [utilitiesOpen, setUtilitiesOpen] = useState(false);
   const utilities = useRef<HTMLDivElement>(null);
-  const exportOrders = (data?.purchase_orders ?? []).filter(canExport);
-  const releaseOrders = (data?.purchase_orders ?? []).filter(
-    canReleasePurchaseOrder,
-  );
+  const [includeHidden, setIncludeHidden] = useState(false);
+  const [review, setReview] = useState<OrderReview | null>(null);
+  const reviewTrigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    setIncludeHidden(false);
+    setReview(null);
+  }, [data?.date_start, data?.date_end, search, authSubject]);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const pendingFocusId = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -128,6 +136,42 @@ export function ProcurementOrdersStage({
       .toLocaleLowerCase("vi")
       .includes(search.toLocaleLowerCase("vi")),
   );
+  const scope = includeHidden ? (data?.purchase_orders ?? []) : visible;
+  const exportOrders = scope.filter(canExport);
+  const releaseOrders = scope.filter(canReleasePurchaseOrder);
+  const startReview = (
+    action: OrderReviewAction,
+    button: HTMLButtonElement,
+  ) => {
+    const orders = action === "release" ? releaseOrders : exportOrders;
+    if (!data || disabled || exporting || !orders.length) return;
+    const dates =
+      data.date_start === data.date_end
+        ? dateLabel(data.date_start)
+        : `${dateLabel(data.date_start)} – ${dateLabel(data.date_end)}`;
+    const scopeLabel =
+      search && !includeHidden
+        ? `${orders.length} đơn đủ điều kiện khớp “${search}” · ${dates}`
+        : `${orders.length} đơn đủ điều kiện trong khoảng ngày · ${dates}`;
+    reviewTrigger.current = button;
+    setReview({ action, orders: structuredClone(orders), scopeLabel });
+  };
+  const currentById = new Map(
+    scope.map((order) => [order.purchase_order_id, order]),
+  );
+  const reviewChanged =
+    review?.orders.some((approved) => {
+      const current = currentById.get(approved.purchase_order_id);
+      return (
+        !current ||
+        current.version !== approved.version ||
+        current.current_revision.purchase_order_revision_id !==
+          approved.current_revision.purchase_order_revision_id ||
+        !(review.action === "release"
+          ? canReleasePurchaseOrder(current)
+          : canExport(current))
+      );
+    }) ?? false;
   // undefined selects the first visible readback; null is an intentional Close.
   const selected =
     selectedId === undefined
@@ -188,12 +232,18 @@ export function ProcurementOrdersStage({
       setExporting(false);
     }
   };
-  const exportZip = async (format: "xlsx" | "pdf") => {
-    if (!onExportZip || !exportOrders.length || disabled || exporting) return;
+  const confirmReview = async () => {
+    if (!review || disabled || exporting || reviewChanged) return;
+    setReview(null);
+    if (review.action === "release") {
+      onReleaseAll?.(review.orders);
+      return;
+    }
+    if (!onExportZip) return;
     setExporting(true);
     setExportError(null);
     try {
-      await onExportZip(exportOrders, exportMode, format);
+      await onExportZip(review.orders, exportMode, review.action);
     } catch {
       setExportError("Chưa xuất được chứng từ. Hãy thử xuất lại.");
     } finally {
@@ -282,7 +332,6 @@ export function ProcurementOrdersStage({
           ref={utilities}
           id={`${detailId}-loaded-utilities`}
           aria-label="Tiện ích đơn mua đã tải"
-          aria-describedby={`${detailId}-loaded-scope`}
           display={{
             base: utilitiesOpen ? "flex" : "none",
             lg: "flex",
@@ -291,15 +340,40 @@ export function ProcurementOrdersStage({
           alignItems={{ base: "stretch", lg: "center" }}
           flexDirection={{ base: "column", lg: "row" }}
         >
+          {search && (onReleaseAll || onExportZip) && (
+            <Field.Root
+              w={{ base: "full", lg: "var(--atlas-layout-auto, auto)" }}
+              disabled={disabled || exporting}
+            >
+              <Field.Label>Phạm vi thao tác</Field.Label>
+              <NativeSelect.Root disabled={disabled || exporting}>
+                <NativeSelect.Field
+                  data-po-action-scope=""
+                  value={includeHidden ? "loaded" : "visible"}
+                  onChange={(event) =>
+                    setIncludeHidden(event.target.value === "loaded")
+                  }
+                >
+                  <option value="visible">
+                    Đơn đang hiển thị ({visible.length})
+                  </option>
+                  <option value="loaded">
+                    Tất cả trong khoảng ngày ({data.purchase_orders.length})
+                  </option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Field.Root>
+          )}
           {onReleaseAll && (
             <Button
               variant="secondary"
               disabled={disabled || exporting || releaseOrders.length === 0}
               loading={Boolean(bulkProgress)}
-              onClick={onReleaseAll}
-              aria-describedby={`${detailId}-loaded-scope`}
+              onClick={(event) => startReview("release", event.currentTarget)}
+              data-po-bulk-review="release"
             >
-              Phát hành tất cả PO ({releaseOrders.length})
+              Phát hành ({releaseOrders.length})
             </Button>
           )}
           <Field.Root
@@ -344,7 +418,8 @@ export function ProcurementOrdersStage({
                   flex={{ base: "1", sm: "var(--atlas-layout-auto, auto)" }}
                   loading={exporting}
                   disabled={disabled || exporting || !exportOrders.length}
-                  onClick={() => void exportZip(format)}
+                  onClick={(event) => startReview(format, event.currentTarget)}
+                  data-po-bulk-review={format}
                 >
                   <FileArrowDown aria-hidden="true" />
                   Xuất {format.toUpperCase()}
@@ -354,32 +429,19 @@ export function ProcurementOrdersStage({
           )}
         </AtlasWorkbar>
       </AtlasWorkbar>
-      <Box
-        px="md"
-        pb="sm"
-        bg="bg.toolbar"
-        display={{ base: utilitiesOpen ? "block" : "none", lg: "block" }}
-      >
-        <Text
-          id={`${detailId}-loaded-scope`}
-          textStyle="helper"
-          color="fg.secondary"
-          maxW="var(--atlas-po-scope-measure, 75ch)"
-        >
-          {onReleaseAll
-            ? "Phát hành các bản nháp và xuất các đơn"
-            : "Xuất các đơn"}{" "}
-          đủ điều kiện trong dữ liệu đã tải theo khoảng ngày;{" "}
-          <Box as="span" fontWeight="semibold">
-            không giới hạn theo tìm kiếm.
-          </Box>
+      <ProcurementOrderReviewDialog
+        review={review}
+        changed={reviewChanged}
+        disabled={disabled || exporting}
+        onClose={() => setReview(null)}
+        onConfirm={() => void confirmReview()}
+        returnFocusEl={() => reviewTrigger.current}
+      />
+      {bulkProgress && (
+        <Text px="md" pb="sm" role="status" textStyle="helper">
+          Đã xác nhận {bulkProgress.completed}/{bulkProgress.total} PO.
         </Text>
-        {bulkProgress && (
-          <Text role="status" textStyle="helper">
-            Đã xác nhận {bulkProgress.completed}/{bulkProgress.total} PO.
-          </Text>
-        )}
-      </Box>
+      )}
       {exportError && (
         <Text px="md" pb="sm" role="alert" color="status.danger">
           {exportError}
@@ -752,7 +814,7 @@ export function ProcurementOrdersStage({
                             textStyle="unitInline"
                             color="fg.secondary"
                           >
-                            {purchaseOrderLineUnitLabel(selected.status, line)}
+                            {purchaseOrderUnitText(selected.status, line)}
                           </Text>
                         </Text>
                         <Text mt="xs" textStyle="helper" color="fg.muted">
@@ -790,10 +852,7 @@ export function ProcurementOrdersStage({
                                   textStyle="unitInline"
                                   color="fg.secondary"
                                 >
-                                  {purchaseOrderLineUnitLabel(
-                                    selected.status,
-                                    line,
-                                  )}
+                                  {purchaseOrderUnitText(selected.status, line)}
                                 </Text>
                               </Text>
                             </Flex>

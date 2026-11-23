@@ -1,6 +1,7 @@
 // A distinct future week on the already reset disposable runner. Reuse only its
 // synthetic master facts; all operational prerequisites use authenticated commands.
 import assert from "node:assert/strict";
+import { confirmReviewedOrders } from "./atlas-po-bulk-review-browser.mjs";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -263,7 +264,7 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
   await until(
     () =>
       evaluate(
-        `[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Phát hành tất cả PO (0)'&&b.disabled)&&document.body.innerText.includes('Cần chuẩn bị đầy đủ đơn mua')`,
+        `Boolean(document.querySelector('[data-po-bulk-review="release"]:disabled'))&&document.body.innerText.includes('Cần chuẩn bị đầy đủ đơn mua')`,
       ),
     "FRONTIER_BLOCKED_UI",
   );
@@ -308,7 +309,7 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
   await until(
     () =>
       evaluate(
-        `[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Phát hành tất cả PO (2)'&&!b.disabled)`,
+        `Boolean(document.querySelector('[data-po-bulk-review="release"]:enabled'))`,
       ),
     "FRONTIER_REPAIRED_UI",
   );
@@ -375,11 +376,12 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
     "Regenerated Draft quantities/Units/scope must equal explicitly saved allocation facts.",
   );
   assert.equal(receiptCount(), beforeReceipts);
-  assert(
-    await evaluate(
-      `(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Phát hành tất cả PO (2)');if(!b||b.disabled)return false;b.click();return true;})()`,
-    ),
-  );
+  await confirmReviewedOrders({
+    evaluate,
+    until,
+    action: "release",
+    orders: regenerated,
+  });
   await until(
     () => evaluate("document.body.innerText.includes('Đã phát hành 2/2 PO.')"),
     "FRONTIER_RELEASED_UI",
@@ -400,7 +402,7 @@ and l.ingredient_id='a7400000-0000-4000-8000-000000002002' and r.is_current and 
   await until(
     () =>
       evaluate(
-        `performance.timeOrigin!==${JSON.stringify(priorOrigin)}&&document.readyState==='complete'&&Boolean(document.querySelector('button[aria-label="Làm mới dữ liệu"]:not(:disabled)'))&&${JSON.stringify(releasedBeforeReload.map((o) => o.document_number))}.every(number=>document.body.innerText.includes(number))&&[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Phát hành tất cả PO (0)'&&b.disabled)`,
+        `performance.timeOrigin!==${JSON.stringify(priorOrigin)}&&document.readyState==='complete'&&Boolean(document.querySelector('button[aria-label="Làm mới dữ liệu"]:not(:disabled)'))&&${JSON.stringify(releasedBeforeReload.map((o) => o.document_number))}.every(number=>document.body.innerText.includes(number))&&Boolean(document.querySelector('[data-po-bulk-review="release"]:disabled'))`,
       ),
     "FRONTIER_RELEASE_REOPENED",
   );

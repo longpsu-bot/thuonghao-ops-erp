@@ -1,4 +1,5 @@
 import { atlasVisuallyHidden } from "../AtlasTaskTabs";
+import { staffReference } from "../atlasStaffReference";
 import {
   atlasSecondaryTabList,
   atlasSecondaryTabTrigger,
@@ -510,7 +511,9 @@ function SchoolDefaultsTable({
                       textStyle="helper"
                       color={dirty ? "fg.primary" : "fg.muted"}
                     >
-                      {school.school_code} · {school.customer_name}
+                      {staffReference(school.school_code) &&
+                        `${school.school_code} · `}
+                      {school.customer_name}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
