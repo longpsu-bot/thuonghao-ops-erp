@@ -1043,6 +1043,32 @@ describe("Confirmed Need Chakra operator surface", () => {
     );
     expect(screen.getByText(/6 dòng/)).toBeVisible();
   });
+  it.each([
+    [true, "Rau nêm làm tròn lên theo nấc 0,1 kg"],
+    [false, "Làm tròn lên theo bước nguyên liệu:"],
+  ] as const)(
+    "explains the current rounding step for herb membership %s",
+    async (herb, message) => {
+      show("needs_review", {}, (fixture) => {
+        Object.assign(fixture.batch.lines[0]!, {
+          proposal_rounding_step: "0.100000",
+          proposal_whole_round_from: "2.000000",
+          proposal_is_kilogram: true,
+          proposal_herb_ceiling: herb,
+        });
+      });
+      await quantity();
+      openUtilities();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Xem cách hình thành nhu cầu" }),
+      );
+      const evidence = await screen.findByRole("table", {
+        name: "Cách hình thành nhu cầu",
+      });
+      expect(evidence).toHaveTextContent(message);
+      expect(evidence).not.toHaveTextContent("đến số nguyên gần nhất");
+    },
+  );
   it("keeps the primary table on proposal and human confirmation while moving raw and step evidence to progressive detail", async () => {
     show("needs_review", {}, (fixture) => {
       Object.assign(fixture.batch.lines[0]!, {

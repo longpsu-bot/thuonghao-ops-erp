@@ -9,29 +9,21 @@
 
 ## Quy tắc hiện hành và cách thay đổi (23/11/2026)
 
-Quy tắc V1 áp dụng cho **đề xuất vận hành của phiếu nhu cầu lập mới**. Atlas cộng các nguồn của cùng dòng nhu cầu (cùng ngày, trường, điểm giao, nguyên liệu và đơn vị) rồi làm tròn tổng qua hai bước.
+Với phiếu lập mới, Atlas cộng lượng gốc của các nguồn có cùng ngày, trường, điểm giao, nguyên liệu và đơn vị. Atlas làm tròn lên tổng của từng dòng một lần. Lượng đã đúng nấc giữ nguyên, kể cả số 0.
 
-1. Làm tròn tổng lên đến bội số gần nhất của bước nguyên liệu (`Ingredient.order_step`).
-2. Với **kg**, nếu kết quả bước 1 nhỏ hơn 2 kg, làm tròn đến một chữ số thập phân. Từ 2 kg trở lên, làm tròn đến số nguyên gần nhất. Với **các đơn vị khác**, làm tròn đến số nguyên gần nhất ở mọi mức. Atlas tính trên số thập phân chính xác và làm tròn lên tại điểm giữa.
+| Dòng nhu cầu                             | Nấc áp dụng                                                    | Ví dụ                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Rau nêm tính bằng kg, tổng gốc dưới 2 kg | 0,1 kg                                                         | 0,12 → 0,2 kg; 1,91 → 2 kg                                              |
+| Rau nêm tính bằng kg, tổng gốc từ 2 kg   | 0,5 kg                                                         | 2 → 2 kg; 2,26 → 2,5 kg; 2,51 → 3 kg                                    |
+| Các dòng còn lại                         | Bước đặt hàng của nguyên liệu tại thời điểm lập phiên bản dòng | 2,26 kg với bước 0,1 kg → 2,3 kg; 1,21 lít với bước 0,25 lít → 1,25 lít |
 
-| Nhu cầu gốc | Bước nguyên liệu | Sau bước 1 | Đề xuất |
-| ----------: | ---------------: | ---------: | ------: |
-|     1,21 kg |          0,25 kg |    1,25 kg |  1,3 kg |
-|    1,21 lít |         0,25 lít |   1,25 lít |   1 lít |
-|     1,84 kg |           0,1 kg |     1,9 kg |  1,9 kg |
-|     1,91 kg |           0,1 kg |       2 kg |    2 kg |
-|     2,01 kg |           0,1 kg |     2,1 kg |    2 kg |
-|     2,49 kg |           0,1 kg |     2,5 kg |    3 kg |
+**Danh sách rau nêm đã duyệt.** Hành lá (960), Ngò rí (989), Ngò gai (988), Rau ôm (1004), Rau quế (1078), Rau kinh giới (1109) và Rau thơm các loại (1120). Số trong ngoặc là phần số của mã `v1-ingredient-…`. Hẹ lá, Cần ta, Cần tây, Sả bào và Sả cây dùng bước đặt hàng riêng. Quy tắc áp dụng ở bước lập nhu cầu sau khi đã tính định mức món.
 
-Đề xuất có thể thấp hơn nhu cầu gốc. Nhân viên có thể xem cả hai số tại **Xác nhận nhu cầu → Xem cách hình thành nhu cầu**. Số lượng nhân viên tự nhập vẫn phải khớp bước xác nhận của đơn vị. Nếu đề xuất tự động không biểu diễn được theo bước xác nhận, Atlas báo lỗi và hủy lần lập phiếu.
+**Điều chỉnh sau này.** Đổi bước mua thông thường trong danh mục nguyên liệu. Khi đổi danh sách rau nêm, cập nhật phần lấy mã nguyên liệu của hàm lập phiếu bằng một migration mới. Mỗi phiếu mới chụp lại danh sách mã định danh nguyên liệu, đơn vị kg và ngưỡng. Để đổi ngưỡng cho phiếu lập sau, cập nhật `atlas_core.new_need_whole_round_from()` bằng migration với ngưỡng kg dương được duyệt. Nếu đổi nấc 0,1 hoặc 0,5 kg, tạo phiên bản công thức và lưu dấu phiên bản trên phiếu mới để có thể đọc lại phiếu cũ. Ghi ngày áp dụng, danh sách hoặc nấc mới và ví dụ vào mục này. [Migration quy tắc rau nêm](../../supabase/migrations/20261123044946_herb_need_ceiling.sql)
 
-**Đổi ngưỡng cho phiếu mới.** Tạo migration mới thay giá trị trả về của `atlas_core.new_need_whole_round_from()`. Ví dụ, trả về `3::numeric` để bắt đầu làm tròn kg đến số nguyên từ 3 kg, hoặc `NULL::numeric` để quay về chỉ làm tròn lên theo bước nguyên liệu. Ngưỡng có giá trị từ 1 trở lên. Ghi ngày áp dụng và ví dụ đã duyệt vào mục này. Cập nhật và chạy bộ kiểm thử [planning_operational_proposal.sql](../../supabase/tests/planning_operational_proposal.sql), gồm trường hợp dưới ngưỡng, đúng ngưỡng, làm tròn xuống, điểm giữa và đọc lại phiếu cũ trước khi triển khai lên Staging.
+**Kiểm tra khi thay đổi.** Chạy [bộ kiểm thử đề xuất nhu cầu](../../supabase/tests/planning_operational_proposal.sql) cho lượng bằng 0, dưới ngưỡng, đúng ngưỡng, trên ngưỡng, số đã đúng nấc, nguyên liệu thường và đọc lại phiếu cũ. Kiểm tra Đề xuất và Đã lưu trên phiếu mới. Phiếu đi chợ xuất số đã xác nhận, kể cả khi nhân viên đã điều chỉnh. Bước xác nhận theo đơn vị vẫn áp dụng cho số đã lưu.
 
-**Giữ lịch sử.** Phiếu mới lưu ngưỡng kg và danh sách đơn vị kg khi lập. Khi đọc lại hoặc tạo phiên bản kế tiếp trong cùng phiếu, Atlas vẫn dùng hai giá trị đã lưu. Phiếu lập theo phiên bản ngày 20/11 giữ số sau bước nguyên liệu nếu dưới ngưỡng. Phiếu có ngưỡng trống chỉ làm tròn lên theo bước nguyên liệu. Số gốc và số nhân viên đã xác nhận vẫn được giữ.
-
-**Đổi công thức.** Phần tính theo đơn vị nằm trong hàm `atlas_core.unit_need_proposal`. Nếu đổi số chữ số thập phân hoặc cách xử lý điểm giữa, thêm phiên bản mới cho phiếu lập sau ngày triển khai và kiểm thử đọc lại cả hai loại phiếu cũ. Chạy lại các ví dụ cùng bộ kiểm thử SQL nêu trên. [Migration tính theo đơn vị](../../supabase/migrations/20261123030435_need_unit_rounding.sql)
-
-Quy tắc theo đơn vị lấy từ hai hàm xuất phiếu của Retool v1 (`lib/js_shop_Export.js` và `lib/js_need_export_template.js`). Atlas áp dụng quy tắc này lúc tạo đề xuất nhu cầu, sau bước làm tròn riêng của nguyên liệu. Phiếu đi chợ dùng số lượng đã lưu.
+**Lịch sử và khôi phục.** Phiếu lập trước thay đổi giữ công thức tại thời điểm lập, kể cả khi đọc lại hoặc sửa trong cùng phiếu. Phiếu ngày 13/11/2026 đã thử trên Staging dùng quy tắc v1 cũ, trong đó 2,26 kg hành lá được đề xuất 2 kg. Các phiên bản trước đó dùng ngưỡng sau bước nguyên liệu hoặc chỉ làm tròn lên theo bước nguyên liệu. Khi cần quay lại chính sách trước, dùng migration mới để chọn chính sách đó cho phiếu lập tiếp theo và giữ dữ liệu, công thức đọc của các phiếu đã lập.
 
 ## Original decision (23 September 2026)
 

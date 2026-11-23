@@ -400,37 +400,54 @@ export function ConfirmedNeedSupportDetail({
                         {line?.proposal_rounding_step ? (
                           <>
                             <Text textStyle="helper" color="fg.muted">
-                              Làm tròn lên theo bước nguyên liệu:{" "}
+                              {line.proposal_herb_ceiling
+                                ? "Bước đặt hàng:"
+                                : "Làm tròn lên theo bước nguyên liệu:"}{" "}
                               {exactQuantityDisplay(
                                 line.proposal_rounding_step,
                               )}{" "}
                               {confirmedNeedUnitLabel(line.controlled_unit)}
                             </Text>
-                            {line.proposal_whole_round_from && (
-                              <Text
-                                textStyle="helper"
-                                color="fg.muted"
-                                whiteSpace="normal"
-                              >
-                                {line.proposal_is_kilogram === false ? (
-                                  "Làm tròn kết quả đến số nguyên gần nhất (0,5 làm tròn lên)."
-                                ) : (
-                                  <>
-                                    {line.proposal_is_kilogram &&
-                                      `Dưới ${exactQuantityDisplay(line.proposal_whole_round_from)} kg, làm tròn đến một chữ số thập phân. `}
-                                    Từ{" "}
-                                    {exactQuantityDisplay(
-                                      line.proposal_whole_round_from,
-                                    )}{" "}
-                                    {confirmedNeedUnitLabel(
-                                      line.controlled_unit,
-                                    )}{" "}
-                                    sau bước trên, làm tròn đến số nguyên gần
-                                    nhất (0,5 làm tròn lên).
-                                  </>
-                                )}
-                              </Text>
-                            )}
+                            {line.proposal_herb_ceiling &&
+                              line.proposal_whole_round_from && (
+                                <Text
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  whiteSpace="normal"
+                                >
+                                  Rau nêm làm tròn lên theo nấc 0,1 kg khi dưới{" "}
+                                  {exactQuantityDisplay(
+                                    line.proposal_whole_round_from,
+                                  )}{" "}
+                                  kg và theo nấc 0,5 kg từ ngưỡng này.
+                                </Text>
+                              )}
+                            {line.proposal_herb_ceiling == null &&
+                              line.proposal_whole_round_from && (
+                                <Text
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  whiteSpace="normal"
+                                >
+                                  {line.proposal_is_kilogram === false ? (
+                                    "Làm tròn kết quả đến số nguyên gần nhất (0,5 làm tròn lên)."
+                                  ) : (
+                                    <>
+                                      {line.proposal_is_kilogram &&
+                                        `Dưới ${exactQuantityDisplay(line.proposal_whole_round_from)} kg, làm tròn đến một chữ số thập phân. `}
+                                      Từ{" "}
+                                      {exactQuantityDisplay(
+                                        line.proposal_whole_round_from,
+                                      )}{" "}
+                                      {confirmedNeedUnitLabel(
+                                        line.controlled_unit,
+                                      )}{" "}
+                                      sau bước trên, làm tròn đến số nguyên gần
+                                      nhất (0,5 làm tròn lên).
+                                    </>
+                                  )}
+                                </Text>
+                              )}
                             <Text fontWeight="semibold">
                               Đề xuất vận hành:{" "}
                               {exactQuantityDisplay(

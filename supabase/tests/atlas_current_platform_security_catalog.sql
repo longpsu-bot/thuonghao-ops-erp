@@ -1824,14 +1824,14 @@ select is(
     'policy_count', 692,
     'policy_catalog_md5', '96d204baa9d4c35118428c5fc450dc9a',
     'rmvp_05_unit_lock_policy_count', 1,
-    -- The unit-aware proposal adds one private helper and one snapshot guard.
-    'private_function_count', 389,
-    'private_function_catalog_md5', 'e59515f1edca7b67be1c9510f9d4e1ac',
-    'trigger_count', 130,
-    'trigger_catalog_md5', '424e3a406932836729cfddc874ad2052',
+    -- The herb ceiling policy adds one private helper and one snapshot guard.
+    'private_function_count', 390,
+    'private_function_catalog_md5', '488aa972323b97c0c79c36d7f47911f9',
+    'trigger_count', 131,
+    'trigger_catalog_md5', '098a027cfb5b7f3b1a835dd5938b4c79',
     -- The materialization and review runtimes may execute the new private calculation.
-    'positive_target_grant_count', 1948,
-    'positive_target_grant_md5', '80e57aef96d88272df998a5099f6c60f',
+    'positive_target_grant_count', 1950,
+    'positive_target_grant_md5', '4078f2a87123e8ae2e612ac293e6f96c',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 123,
     'pa_06a_write_count', 15,
