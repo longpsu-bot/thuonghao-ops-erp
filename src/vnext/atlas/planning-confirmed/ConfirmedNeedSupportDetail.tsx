@@ -488,33 +488,33 @@ export function ConfirmedNeedSupportDetail({
           </Flex>
           {group && (
             <Box mt="sm" aria-label="Nguồn đóng góp chi tiết">
-              {data.atomic_detail.map((a, i) => (
-                <Text key={i} textStyle="helper">
-                  {contributionSourceLabel(a)} ·{" "}
-                  {a.pantry_purpose_code === "auto_weekly_pantry" &&
-                  a.quantity_per_menu_day &&
-                  a.counted_menu_days ? (
-                    <>
-                      {exactQuantityDisplay(a.quantity_per_menu_day)}{" "}
-                      {a.unit_name}/ngày × {a.counted_menu_days.length} ngày
-                    </>
-                  ) : (
-                    (a.dish_name ??
-                    (a.pantry_purpose_code === "school_requested_supplement"
-                      ? null
-                      : a.pantry_purpose))
-                  )}{" "}
-                  {staffReference(a.pantry_source_reference) &&
-                  a.pantry_purpose_code !== "auto_weekly_pantry"
-                    ? `· ${a.pantry_source_reference}`
-                    : ""}{" "}
-                  ·{" "}
-                  {typeof a.exact_theoretical_quantity === "string"
+              {data.atomic_detail.map((a, i) => {
+                const automatic =
+                  a.pantry_purpose_code === "auto_weekly_pantry";
+                const description =
+                  automatic && a.quantity_per_menu_day && a.counted_menu_days
+                    ? `${exactQuantityDisplay(a.quantity_per_menu_day)} ${a.unit_name}/ngày × ${a.counted_menu_days.length} ngày`
+                    : (a.dish_name ??
+                      (a.pantry_purpose_code === "school_requested_supplement"
+                        ? null
+                        : a.pantry_purpose));
+                const quantity =
+                  typeof a.exact_theoretical_quantity === "string"
                     ? exactQuantityDisplay(a.exact_theoretical_quantity)
-                    : formatQuantity(a.theoretical_quantity)}{" "}
-                  {a.unit_name}
-                </Text>
-              ))}
+                    : formatQuantity(a.theoretical_quantity);
+                return (
+                  <Text key={i} textStyle="helper">
+                    {[
+                      contributionSourceLabel(a),
+                      description,
+                      !automatic && staffReference(a.pantry_source_reference),
+                      `${quantity} ${a.unit_name}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </Text>
+                );
+              })}
             </Box>
           )}
         </>

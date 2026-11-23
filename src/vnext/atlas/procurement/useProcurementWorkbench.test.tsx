@@ -542,6 +542,13 @@ describe("Preparation and PO actions", () => {
     });
     expect(h.result.current.dayPreparation?.date).toBe(chosen);
     expect(h.result.current.canPrepare).toBe(false);
+    const denied = "Bạn không có quyền với toàn bộ nhu cầu này.";
+    h.read.mockResolvedValueOnce(reviewSuccess({
+      ...day,
+      preparation: { ready: false, allowed: false, blockers: [denied] },
+    }));
+    await act(async () => h.result.current.checkPreparationDay(chosen, false));
+    expect(h.result.current.dayPreparation?.message).toBe(denied);
     h.read.mockResolvedValueOnce(reviewSuccess(day));
     await act(async () => h.result.current.checkPreparationDay(chosen, false));
     expect(h.result.current.canPrepare).toBe(true);
