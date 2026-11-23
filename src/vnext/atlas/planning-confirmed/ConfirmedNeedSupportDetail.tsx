@@ -412,13 +412,23 @@ export function ConfirmedNeedSupportDetail({
                                 color="fg.muted"
                                 whiteSpace="normal"
                               >
-                                Từ{" "}
-                                {exactQuantityDisplay(
-                                  line.proposal_whole_round_from,
-                                )}{" "}
-                                {confirmedNeedUnitLabel(line.controlled_unit)}{" "}
-                                sau bước trên, làm tròn đến số nguyên gần nhất
-                                (0,5 làm tròn lên).
+                                {line.proposal_is_kilogram === false ? (
+                                  "Làm tròn kết quả đến số nguyên gần nhất (0,5 làm tròn lên)."
+                                ) : (
+                                  <>
+                                    {line.proposal_is_kilogram &&
+                                      `Dưới ${exactQuantityDisplay(line.proposal_whole_round_from)} kg, làm tròn đến một chữ số thập phân. `}
+                                    Từ{" "}
+                                    {exactQuantityDisplay(
+                                      line.proposal_whole_round_from,
+                                    )}{" "}
+                                    {confirmedNeedUnitLabel(
+                                      line.controlled_unit,
+                                    )}{" "}
+                                    sau bước trên, làm tròn đến số nguyên gần
+                                    nhất (0,5 làm tròn lên).
+                                  </>
+                                )}
                               </Text>
                             )}
                             <Text fontWeight="semibold">

@@ -58,10 +58,10 @@ select isnt(has_function_privilege('public','atlas_core.pa_06e_h0cb_validate_mat
 select is((select count(*)::integer from (values('anon'),('authenticated'),('service_role')) roles(role_name) where has_function_privilege(role_name,'atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE')), 0, 'API roles cannot execute the validator');
 select ok(has_function_privilege('atlas_planning_materialization_runtime','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), 'runtime may invoke the validator');
 -- Preserved postgres inheritance exposes both private helper grantors in this view.
-select ok((select count(*)=24 and count(*) filter (where routine_schema='atlas_core'
-  and routine_name in ('new_need_whole_round_from','planning_need_proposal'))=2
+select ok((select count(*)=25 and count(*) filter (where routine_schema='atlas_core'
+  and routine_name in ('new_need_whole_round_from','planning_need_proposal','unit_need_proposal'))=3
   from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'),
-  'materializer retains its 22 previous EXECUTEs plus the two private Need rounding helpers');
+  'materializer retains its 22 previous EXECUTEs plus the three private Need rounding helpers');
 select is((select count(*)::integer from pg_namespace n where n.nspname in ('atlas_core','atlas_admin','atlas_planning','atlas_audit','atlas_api') and has_schema_privilege('atlas_planning_materialization_runtime',n.oid,'USAGE')), 5, 'runtime has usage on exactly five Atlas schemas');
 
 -- Practical minimum relation privileges.
