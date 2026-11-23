@@ -12,7 +12,7 @@ The three tables below form one register. Join them by Rule ID. “Legacy” des
 
 ## 2. Rule identity, formula, and implementation evidence
 
-The [20 November amendment to D-046](../decisions/decision-planning-operational-proposal.md) adopts QRR-006/007 for new school-catering Draft proposals after the Ingredient ceiling. The batch snapshot controls readback. Earlier recommendations below record the historical evaluation of legacy Procurement.
+The [23 November amendment to D-046](../decisions/decision-planning-operational-proposal.md) applies the V1 shopping-list rounding rule to new school-catering Draft proposals after the Ingredient ceiling. Kilograms below 2 round to tenths. Other units and kg at or above 2 round to integers. Historical batches retain their captured rule, including the 20 November QRR-006/007 threshold-only formula. Earlier recommendations below record the historical evaluation of legacy Procurement.
 
 | Rule ID | Rule name                        | Domain owner                  | Lifecycle stage       | Legacy behavior                                                                                   | Active implementation                                   | Inputs                                         | Formula                                                         |
 | ------- | -------------------------------- | ----------------------------- | --------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------- |
