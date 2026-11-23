@@ -408,19 +408,20 @@ export function ConfirmedNeedSupportDetail({
                               )}{" "}
                               {confirmedNeedUnitLabel(line.controlled_unit)}
                             </Text>
-                            {line.proposal_herb_ceiling && (
-                              <Text
-                                textStyle="helper"
-                                color="fg.muted"
-                                whiteSpace="normal"
-                              >
-                                Rau nêm làm tròn lên theo nấc 0,1 kg khi dưới{" "}
-                                {exactQuantityDisplay(
-                                  line.proposal_whole_round_from!,
-                                )}{" "}
-                                kg và theo nấc 0,5 kg từ ngưỡng này.
-                              </Text>
-                            )}
+                            {line.proposal_herb_ceiling &&
+                              line.proposal_whole_round_from && (
+                                <Text
+                                  textStyle="helper"
+                                  color="fg.muted"
+                                  whiteSpace="normal"
+                                >
+                                  Rau nêm làm tròn lên theo nấc 0,1 kg khi dưới{" "}
+                                  {exactQuantityDisplay(
+                                    line.proposal_whole_round_from,
+                                  )}{" "}
+                                  kg và theo nấc 0,5 kg từ ngưỡng này.
+                                </Text>
+                              )}
                             {line.proposal_herb_ceiling == null &&
                               line.proposal_whole_round_from && (
                                 <Text
