@@ -293,7 +293,7 @@ values ('f5100000-0000-0000-0000-000000000003', 'rmvp05-type', 'RMVP-05 Type');
 insert into atlas_admin.schools (school_id, customer_id, school_code, school_name, school_type_id, default_delivery_location_id, display_order)
 values ('f5100000-0000-0000-0000-000000000004', 'f5100000-0000-0000-0000-000000000001', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000003', 'f5100000-0000-0000-0000-000000000002', 10);
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
-values ('f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'mass');
+values ('f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'Kilogram', 'mass');
 insert into atlas_admin.ingredients (
   ingredient_id, ingredient_code, ingredient_name, purchase_unit_id, order_step
 ) values
@@ -328,8 +328,8 @@ insert into atlas_planning.pantry_need_approval_snapshot_lines (
   pantry_need_purpose_id, purpose_code_snapshot, purpose_name_snapshot, purpose_description_snapshot, purpose_note_rule_snapshot,
   requested_quantity, note, source_request_reference, source_row_reference
 ) values
-  ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000004', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000006', 'rmvp05-rice', 'RMVP-05 rice', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 2, 'Rice supplement', 'RMVP05', '1'),
-  ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000005', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 1.225, 'Bean supplement', 'RMVP05', '2');
+  ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000004', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000006', 'rmvp05-rice', 'RMVP-05 rice', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'Kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 2, 'Rice supplement', 'RMVP05', '1'),
+  ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000005', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'Kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 1.225, 'Bean supplement', 'RMVP05', '2');
 
 insert into atlas_planning.need_generation_calculation_contracts (need_generation_calculation_contract_id, contract_code, current_revision_id, version, created_at, updated_at)
 values ('f5400000-0000-0000-0000-000000000010', 'school_catering_proportional_per_basis', 'f5400000-0000-0000-0000-000000000011', 1, '2026-11-01 07:00:00+07', '2026-11-01 07:00:00+07');
