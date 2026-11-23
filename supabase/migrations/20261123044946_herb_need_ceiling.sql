@@ -83,9 +83,12 @@ set role atlas_confirmed_need_review_runtime;
 do $migration$
 declare reader constant regprocedure := 'atlas_core.rmvp_05_workbench_payload(uuid,jsonb,integer,integer)';
 begin
-  perform pg_temp.patch_herb_ceiling(reader, 'atlas_core.unit_need_proposal(', 'atlas_core.ingredient_need_proposal(');
-  perform pg_temp.patch_herb_ceiling(reader, 'any(b.proposal_kg_unit_ids))',
-    'any(b.proposal_kg_unit_ids), l.ingredient_id = any(b.proposal_herb_ingredient_ids))');
+  perform pg_temp.patch_herb_ceiling(reader,
+    'atlas_core.unit_need_proposal(revision.theoretical_quantity,
+          revision.proposal_rounding_step, b.proposal_whole_round_from, l.controlled_unit_id = any(b.proposal_kg_unit_ids))',
+    'atlas_core.ingredient_need_proposal(revision.theoretical_quantity,
+          revision.proposal_rounding_step, b.proposal_whole_round_from, l.controlled_unit_id = any(b.proposal_kg_unit_ids),
+          l.ingredient_id = any(b.proposal_herb_ingredient_ids))');
   perform pg_temp.patch_herb_ceiling(reader, '      b.proposal_whole_round_from,',
     '      b.proposal_whole_round_from,
       case when b.proposal_herb_ingredient_ids is not null then
