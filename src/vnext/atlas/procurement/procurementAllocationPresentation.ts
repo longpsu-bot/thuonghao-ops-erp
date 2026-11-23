@@ -1,7 +1,22 @@
-import type { AllocationFamilyRow } from "../bridges/procurement";
+import {
+  allocationFamilyUnitLabel,
+  purchaseOrderLineUnitLabel,
+  type AllocationFamilyRow,
+  type SchoolCateringPurchaseOrder,
+} from "../bridges/procurement";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { compareAtlasText } from "../atlasTableSort";
 import { parseExactQuantity } from "./procurementExactQuantity";
+
+export function purchaseOrderUnitText(
+  status: SchoolCateringPurchaseOrder["status"],
+  line: SchoolCateringPurchaseOrder["lines"][number],
+) {
+  // Old released lines can only carry the historical Unit code.
+  return allocationFamilyUnitLabel({
+    unit_code: purchaseOrderLineUnitLabel(status, line),
+  });
+}
 
 export function derivedDefaultAllocation(row: AllocationFamilyRow) {
   const quantity = parseExactQuantity(row.family_quantity ?? "");
@@ -39,6 +54,10 @@ export function allocationSchools(row: AllocationFamilyRow) {
   )
     .slice()
     .sort(compareCanonicalSchools);
+}
+
+export function allocationNeedsAttention(row: AllocationFamilyRow) {
+  return row.state !== "BALANCED" && !derivedDefaultAllocation(row);
 }
 
 export function allocationRecipient(row: AllocationFamilyRow) {

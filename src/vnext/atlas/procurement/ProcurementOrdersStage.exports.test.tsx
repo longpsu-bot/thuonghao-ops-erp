@@ -23,6 +23,15 @@ const bulk = () => {
 };
 const selectedExports = () =>
   within(screen.getByRole("region", { name: /^Chi tiết đơn mua/ }));
+async function confirmExport(format: "XLSX" | "PDF") {
+  const dialog = within(
+    await screen.findByRole("dialog", { name: `Đơn mua sẽ xuất ${format}` }),
+  );
+  expect(
+    dialog.getByRole("list", { name: "Danh sách đơn mua" }),
+  ).toHaveTextContent("PO-20260910-ANPHU");
+  fireEvent.click(dialog.getByRole("button", { name: `Xuất ${format} 1 đơn` }));
+}
 describe("loaded PO presentation exports", () => {
   const data = () => ({
     success: true as const,
@@ -55,6 +64,8 @@ describe("loaded PO presentation exports", () => {
         { target: { value: mode } },
       );
       fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
+      expect(zip).not.toHaveBeenCalled();
+      await confirmExport("PDF");
       await waitFor(() =>
         expect(zip).toHaveBeenCalledWith(orders.purchase_orders, mode, "pdf"),
       );
@@ -82,6 +93,7 @@ describe("loaded PO presentation exports", () => {
     const xlsx = bulk().getByRole("button", { name: "Xuất XLSX" });
     const pdf = bulk().getByRole("button", { name: "Xuất PDF" });
     fireEvent.click(pdf);
+    await confirmExport("PDF");
     expect(xlsx).toBeDisabled();
     expect(pdf).toBeDisabled();
     expect(
@@ -99,6 +111,7 @@ describe("loaded PO presentation exports", () => {
     expect(pdf).toBeEnabled();
     zip.mockResolvedValueOnce(undefined);
     fireEvent.click(xlsx);
+    await confirmExport("XLSX");
     await waitFor(() =>
       expect(zip).toHaveBeenLastCalledWith(
         data().purchase_orders,
@@ -130,6 +143,7 @@ describe("loaded PO presentation exports", () => {
       { target: { value: "details_ing" } },
     );
     fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
+    await confirmExport("XLSX");
     expect(zip).toHaveBeenCalledWith(
       orders.purchase_orders,
       "details_ing",
@@ -157,7 +171,7 @@ describe("loaded PO presentation exports", () => {
     );
     expect(pdf).toHaveBeenCalledWith(orders.purchase_orders[0], "details_ing");
   });
-  it("includes loaded eligible orders despite local search and excludes denied/draft/unready rows", async () => {
+  it("requires an explicit date-wide choice to export hidden eligible orders and excludes denied/draft/unready rows", async () => {
     const orders = data();
     const denied = reviewOrder("po_released");
     denied.purchase_order_id = "denied";
@@ -165,7 +179,9 @@ describe("loaded PO presentation exports", () => {
     const unready = reviewOrder("po_released");
     unready.purchase_order_id = "unready";
     unready.export_ready = false;
-    orders.purchase_orders.push(denied, unready, reviewOrder("po_draft"));
+    const draft = reviewOrder("po_draft");
+    draft.purchase_order_id = "draft";
+    orders.purchase_orders.push(denied, unready, draft);
     const zip = vi.fn();
     render(
       <AtlasVNextProvider>
@@ -178,7 +194,13 @@ describe("loaded PO presentation exports", () => {
         />
       </AtlasVNextProvider>,
     );
+    expect(bulk().getByRole("button", { name: "Xuất XLSX" })).toBeDisabled();
+    fireEvent.change(
+      bulk().getByRole("combobox", { name: "Phạm vi thao tác" }),
+      { target: { value: "loaded" } },
+    );
     fireEvent.click(bulk().getByRole("button", { name: "Xuất XLSX" }));
+    await confirmExport("XLSX");
     expect(zip).toHaveBeenCalledWith(
       [orders.purchase_orders[0]],
       "all",
@@ -188,11 +210,39 @@ describe("loaded PO presentation exports", () => {
       expect(bulk().getByRole("button", { name: "Xuất PDF" })).toBeEnabled(),
     );
     fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
+    await confirmExport("PDF");
     expect(zip).toHaveBeenLastCalledWith(
       [orders.purchase_orders[0]],
       "all",
       "pdf",
     );
+  });
+  it("blocks confirmation when the reviewed revision loses export permission", async () => {
+    const orders = data();
+    const zip = vi.fn();
+    const stage = () => (
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+          onExportZip={zip}
+        />
+      </AtlasVNextProvider>
+    );
+    const { rerender } = render(stage());
+    fireEvent.click(bulk().getByRole("button", { name: "Xuất PDF" }));
+    const dialog = within(await screen.findByRole("dialog"));
+    orders.purchase_orders[0]!.allowed_actions.export = false;
+    rerender(stage());
+    expect(dialog.getByRole("alert")).toHaveTextContent(
+      "Thông tin đơn mua đã thay đổi",
+    );
+    expect(
+      dialog.getByRole("button", { name: "Xuất PDF 1 đơn" }),
+    ).toBeDisabled();
+    expect(zip).not.toHaveBeenCalled();
   });
   it("blocks ZIP while the loaded scope is unavailable", () => {
     const zip = vi.fn();

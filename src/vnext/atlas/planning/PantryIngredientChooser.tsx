@@ -13,6 +13,7 @@ import {
 } from "../AtlasVNextProvider";
 import type { PantryIngredient } from "../bridges/planning";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
+import { staffReference } from "../atlasStaffReference";
 
 /** Query text is local presentation. Only an explicit result selection authors a UUID. */
 export function PantryIngredientChooser({
@@ -229,8 +230,11 @@ export function PantryIngredientChooser({
                 >
                   <Text fontWeight="medium">{item.ingredient_name}</Text>
                   <Text textStyle="helper" color="fg.muted">
-                    {item.purchase_unit.unit_name} (
-                    {item.purchase_unit.unit_code}) · {item.ingredient_code}
+                    {item.purchase_unit.unit_name}
+                    {staffReference(item.purchase_unit.unit_code) &&
+                      ` (${item.purchase_unit.unit_code})`}
+                    {staffReference(item.ingredient_code) &&
+                      ` · ${item.ingredient_code}`}
                     {item.ingredient_status === "ACTIVE"
                       ? ""
                       : " · Ngừng hoạt động"}

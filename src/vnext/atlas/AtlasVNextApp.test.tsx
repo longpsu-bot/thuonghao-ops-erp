@@ -218,7 +218,7 @@ it("carries the selected seven-day range from new Confirmed Need to Allocation a
     ),
   );
   expect(
-    await screen.findByText("Chọn 1 ngày để chuẩn bị đơn mua."),
+    await screen.findByRole("combobox", { name: "Ngày chuẩn bị đơn mua" }),
   ).toBeVisible();
   fireEvent.click(await screen.findByRole("button", { name: "Xem đơn mua" }));
   await waitFor(() =>

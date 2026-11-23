@@ -62,6 +62,7 @@ export function AtlasVNextApp(props: AtlasVNextAppProps) {
 }
 type WorkbenchEntry = {
   seed: string;
+  preparedOrderDay?: { date: string; id: string };
   seedRange?: AtlasOperatorDateRange;
   seedSchoolIds?: string[];
   needContinuation?: {
@@ -256,11 +257,17 @@ function ApplicationSession(props: AtlasVNextAppProps) {
     [open, canDeactivate, createEntry],
   );
   const openOrders = useCallback(
-    (scope: string | AtlasOperatorDateRange) => {
+    (scope: string | AtlasOperatorDateRange, prepared = false) => {
       const range =
         typeof scope === "string" ? { start: scope, end: scope } : scope;
       const retained = entries.current!.has("purchase-orders");
       if (!open("purchase-orders", range.start, range)) return;
+      const entry = entries.current!.get("purchase-orders")!;
+      entry.preparedOrderDay =
+        retained && prepared
+          ? { date: range.start, id: crypto.randomUUID() }
+          : undefined;
+      if (prepared) return;
       if (retained) {
         const retainedRange = ordersContext.current?.range ?? range;
         setNotice(
@@ -415,6 +422,7 @@ function ApplicationSession(props: AtlasVNextAppProps) {
                 definition={definition}
                 app={props}
                 seed={entry.seed}
+                preparedOrderDay={entry.preparedOrderDay}
                 seedRange={entry.seedRange}
                 seedSchoolIds={entry.seedSchoolIds}
                 needContinuation={entry.needContinuation}

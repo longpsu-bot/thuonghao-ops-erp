@@ -29,6 +29,7 @@ import {
   type NeedGenerationWorkbenchData,
 } from "../bridges/confirmedNeed";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import { staffReference } from "../atlasStaffReference";
 export function ConfirmedNeedSupportDetail({
   api,
   authSubject,
@@ -503,7 +504,7 @@ export function ConfirmedNeedSupportDetail({
                       ? null
                       : a.pantry_purpose))
                   )}{" "}
-                  {a.pantry_source_reference &&
+                  {staffReference(a.pantry_source_reference) &&
                   a.pantry_purpose_code !== "auto_weekly_pantry"
                     ? `· ${a.pantry_source_reference}`
                     : ""}{" "}

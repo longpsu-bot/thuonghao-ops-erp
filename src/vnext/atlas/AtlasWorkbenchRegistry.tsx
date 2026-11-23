@@ -74,7 +74,11 @@ export type RenderContext = {
     range: AtlasOperatorDateRange,
     schoolIds?: string[],
   ) => void;
-  onOpenOrders: (scope: string | AtlasOperatorDateRange) => void;
+  preparedOrderDay?: { date: string; id: string };
+  onOpenOrders: (
+    scope: string | AtlasOperatorDateRange,
+    prepared?: boolean,
+  ) => void;
   onOpenAllocation: (range: AtlasOperatorDateRange) => void;
   onOpenPxk: (date: string, schoolIds: string[]) => void;
   onOpenChangeOrders: () => void;
@@ -180,7 +184,9 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
         initialRange={c.seedRange}
         initialSchoolIds={c.seedSchoolIds}
         needContinuation={c.needContinuation}
-        onOpenOrders={c.onOpenOrders}
+        onOpenOrders={(scope) =>
+          c.onOpenOrders(scope, typeof scope === "string")
+        }
         onContextChange={c.onProcurementContextChange}
         purchaseReviewApi={c.app.apis.purchaseReview}
         procurementApi={c.app.apis.procurement}
@@ -199,6 +205,7 @@ export const atlasWorkbenches: readonly AtlasWorkbenchDefinition[] = [
       <ProcurementWorkbench
         {...dateOwner(c)}
         ownerStage="orders"
+        preparedOrderDay={c.preparedOrderDay}
         onOpenAllocation={c.onOpenAllocation}
         initialRange={c.seedRange}
         schoolDispatchApi={c.app.apis.schoolDispatch}

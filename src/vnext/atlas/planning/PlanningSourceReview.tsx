@@ -5,6 +5,7 @@ import {
   attendanceReviewChanges,
   menuReviewChanges,
   viDate,
+  knownPlanningIssueMessage,
   planningIssueMessage,
   type PlanningIssue,
   type MenuLine,
@@ -13,6 +14,26 @@ import {
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { planningPantryReviewRows } from "./planningPantryReviewRows";
 import { pantryIssueCopy } from "./pantryIssueCopy";
+import { staffReference } from "../atlasStaffReference";
+
+function attendanceSourceLocation(reference: string | null) {
+  const row = reference?.match(/:row:(\d+)$/);
+  if (!row) return "Chưa có vị trí nguồn";
+  const workbook = reference?.match(/^(.+\.xlsx?):(.+):row:\d+$/i);
+  if (workbook && staffReference(workbook[1]) && staffReference(workbook[2]))
+    return `${workbook[1]} / ${workbook[2]} · Dòng ${row[1]}`;
+  return `Dòng ${row[1]}`;
+}
+
+function reviewIssueMessage(issue: PlanningIssue) {
+  const detail = staffReference(issue.message);
+  const humanDetail =
+    detail && detail !== issue.code && !/\b\w+_\w+\b|\brpc\b/i.test(detail);
+  return (
+    knownPlanningIssueMessage(issue.code) ??
+    (humanDetail ? detail : planningIssueMessage(issue))
+  );
+}
 export function PlanningSourceReview({
   c,
   reviewRef,
@@ -167,7 +188,7 @@ export function PlanningSourceReview({
         )}
         {c.preview.issues.blockers.map((i, n) => (
           <Text role="alert" key={n} py="xs" color="status.danger">
-            {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
+            {c.job === "pantry" ? pantryIssueCopy(i) : reviewIssueMessage(i)}
           </Text>
         ))}
         {c.job === "attendance" ? (
@@ -180,16 +201,14 @@ export function PlanningSourceReview({
                   color="status.warning"
                   cursor="var(--atlas-disclosure-cursor, pointer)"
                 >
-                  {planningIssueMessage(warnings[0]!)} ({warnings.length} cảnh
+                  {reviewIssueMessage(warnings[0]!)} ({warnings.length} cảnh
                   báo)
                 </Text>
                 {warnings.map((warning, index) => (
                   <Box key={index} ps="sm" py="xs" textStyle="helper">
                     <Text>
-                      {warning.source_row_reference ?? "Chưa có vị trí nguồn"} ·{" "}
-                      {warning.code}
+                      {attendanceSourceLocation(warning.source_row_reference)}
                     </Text>
-                    <Text color="fg.muted">{warning.message}</Text>
                   </Box>
                 ))}
               </Box>
@@ -198,7 +217,7 @@ export function PlanningSourceReview({
         ) : (
           c.preview.issues.warnings.map((i, n) => (
             <Text key={n} py="xs" textStyle="helper" color="status.warning">
-              {c.job === "pantry" ? pantryIssueCopy(i) : i.message}
+              {c.job === "pantry" ? pantryIssueCopy(i) : reviewIssueMessage(i)}
             </Text>
           ))
         )}

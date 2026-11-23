@@ -43,6 +43,12 @@ it("discloses bounded read-only history without claiming cancellation or current
           ...row,
           legacy_id: String(i + 1),
         }))}
+        schoolTypes={[
+          {
+            school_type_code: "v1-school-type-1",
+            school_type_name: "Tiểu học",
+          },
+        ]}
         query=""
       />
     </AtlasVNextProvider>,
@@ -51,23 +57,27 @@ it("discloses bounded read-only history without claiming cancellation or current
   const details = screen.getByText(/Lịch sử OPS v1/).closest("details")!;
   details.open = true;
   fireEvent(details, new Event("toggle", { bubbles: true }));
-  expect(screen.getAllByText("Nguồn inactive; không rõ ngày hủy")).toHaveLength(
-    25,
-  );
+  expect(
+    screen.getAllByText("Đã ngừng áp dụng trong OPS v1. Chưa rõ ngày hủy."),
+  ).toHaveLength(25);
   expect(screen.getAllByText(/1.000001/)).toHaveLength(25);
+  expect(screen.getAllByText("Loại trường: Tiểu học")).toHaveLength(25);
+  expect(screen.getByRole("table")).not.toHaveTextContent(
+    /system_bom_change_orders|Mã nguồn #|v1-school-type/,
+  );
   expect(
     screen.queryByRole("button", { name: "Hủy lệnh" }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Xem thêm lịch sử" }));
-  expect(screen.getAllByText("Nguồn inactive; không rõ ngày hủy")).toHaveLength(
-    27,
-  );
+  expect(
+    screen.getAllByText("Đã ngừng áp dụng trong OPS v1. Chưa rõ ngày hủy."),
+  ).toHaveLength(27);
 });
 
 it("filters source history by the existing accent-insensitive search", () => {
   render(
     <AtlasVNextProvider>
-      <LegacyChangeOrderHistory rows={[row]} query="thit" />
+      <LegacyChangeOrderHistory rows={[row]} schoolTypes={[]} query="thit" />
     </AtlasVNextProvider>,
   );
   expect(screen.getByText(/Lịch sử OPS v1 · 0\/1/)).toBeInTheDocument();

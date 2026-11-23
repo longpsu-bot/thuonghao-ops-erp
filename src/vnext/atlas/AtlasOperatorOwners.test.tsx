@@ -465,13 +465,10 @@ it.each([false, true])(
     ); // Mount/date, command proof and commit invalidation; activation adds no read.
     expect(search).toHaveValue("Giữ bộ lọc");
     expect(
-      screen.getByText(/^Đã mở Đơn mua từ Phân bổ NCC /),
-    ).toHaveTextContent("Hãy tải lại dữ liệu để xem kết quả mới");
-    expect(
-      screen.getByText(/^Đã mở Đơn mua từ Phân bổ NCC /),
-    ).toHaveTextContent(
-      `giữ khoảng ngày ${differentDate ? "2026-09-11" : reviewDate} → ${differentDate ? "2026-09-11" : reviewDate}`,
-    );
+      screen.getByText(
+        `Đơn mua ngày ${reviewDate.split("-").reverse().join("/")}.`,
+      ),
+    ).toBeVisible();
     expect(allocationOwner).toHaveAttribute("hidden");
     await open("Phân bổ NCC");
     expect(owner("Phân bổ NCC")).toBe(allocationOwner);
@@ -483,6 +480,15 @@ it.each([false, true])(
     expect(owner("Đơn mua")).toBe(ordersOwner);
     expect(search).toHaveValue("Giữ bộ lọc");
     expect(orders).toHaveBeenCalledTimes(readsAfterCommit);
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn ngày này" }));
+    expect(search).toHaveValue("");
+    await waitFor(() =>
+      expect(orders.mock.lastCall?.[0].payload).toMatchObject({
+        date_start: reviewDate,
+        date_end: reviewDate,
+      }),
+    );
+    expect(prepare).toHaveBeenCalledOnce();
   },
   30000,
 );

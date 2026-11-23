@@ -255,7 +255,7 @@ describe("Planning sources Chakra workbench", () => {
       screen.queryByRole("checkbox", { name: "Trường Lê Lợi" }),
     ).not.toBeInTheDocument();
   });
-  it("groups Attendance warnings in Vietnamese while retaining every source reference and unknown detail", async () => {
+  it("groups Attendance warnings with readable source positions and diagnostic text", async () => {
     const { fixture } = await show();
     const preview = attendancePreview();
     preview.issues.warnings = [
@@ -273,7 +273,7 @@ describe("Planning sources Chakra workbench", () => {
         code: "ZERO_TOTAL_PORTIONS",
         message:
           "Student and teacher portions total zero for this school and date.",
-        source_row_reference: "paste:row:4",
+        source_row_reference: "Sĩ số.xlsx:Tuần 37:row:4",
       },
       {
         code: "FUTURE_ATTENDANCE_WARNING",
@@ -304,13 +304,15 @@ describe("Planning sources Chakra workbench", () => {
     details.forEach((detail) =>
       fireEvent.click(detail.querySelector("summary")!),
     );
-    for (const reference of ["paste:row:2", "paste:row:3", "paste:row:4"])
+    for (const reference of [
+      "Dòng 2",
+      "Dòng 3",
+      "Sĩ số.xlsx / Tuần 37 · Dòng 4",
+    ])
       expect(
         within(warnings).getByText(reference, { exact: false }),
       ).toBeInTheDocument();
-    expect(
-      within(warnings).getByText(/FUTURE_ATTENDANCE_WARNING/),
-    ).toBeInTheDocument();
+    expect(warnings).not.toHaveTextContent(/FUTURE_ATTENDANCE_WARNING|:row:/);
     expect(
       within(warnings).getByText(/A new warning from the source/),
     ).toBeInTheDocument();
@@ -685,11 +687,10 @@ describe("Planning sources Chakra workbench", () => {
     expect(within(alert).getAllByText(/Trường lạ · 31\/02\/2026/)).toHaveLength(
       2,
     );
-    expect(within(alert).getByText("Google:Tuần:row:4:main")).toBeVisible();
-    expect(within(alert).getByText("Google:Tuần:row:5:soup")).toBeVisible();
-    expect(within(alert).getAllByText("Google:Tuần:row:6:main")).toHaveLength(
-      2,
-    );
+    expect(alert).toHaveTextContent(/dòng 4/);
+    expect(alert).toHaveTextContent(/dòng 5/);
+    expect(alert).toHaveTextContent(/dòng 6/);
+    expect(alert).not.toHaveTextContent(/Google:Tuần:row:/);
     expect(preview).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
   });

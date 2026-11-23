@@ -7,11 +7,13 @@ import {
   renderHook,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementOrdersStage } from "./ProcurementOrdersStage";
 import { useProcurementWorkbench } from "./useProcurementWorkbench";
+import { canReleasePurchaseOrder } from "../bridges/procurement";
 import {
   createProcurementReviewFixture,
   reviewDate,
@@ -46,7 +48,11 @@ function batch() {
       order.allowed_actions.release = false;
       return reviewSuccess({});
     });
-  return { fixture, release };
+  const reviewed = () =>
+    structuredClone(
+      fixture.orders.purchase_orders.filter(canReleasePurchaseOrder),
+    );
+  return { fixture, release, reviewed };
 }
 function hook() {
   const h = batch();
@@ -61,7 +67,7 @@ function hook() {
   return { ...h, ...result };
 }
 describe("Publish all loaded eligible POs", () => {
-  it("shows the complete eligible count even when search hides another supplier", () => {
+  it("reviews the filtered list by default and includes hidden suppliers only after choosing the whole date scope", async () => {
     const { fixture } = batch(),
       releaseAll = vi.fn();
     render(
@@ -76,21 +82,39 @@ describe("Publish all loaded eligible POs", () => {
       </AtlasVNextProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Tiện ích đơn mua" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phát hành tất cả PO (2)" }),
+    fireEvent.click(screen.getByRole("button", { name: "Phát hành (1)" }));
+    const dialog = within(
+      await screen.findByRole("dialog", { name: "Đơn mua sẽ phát hành" }),
     );
-    expect(releaseAll).toHaveBeenCalledOnce();
-    expect(
-      screen.getByRole("button", { name: "Phát hành tất cả PO (2)" }),
-    ).toHaveAccessibleDescription(
-      /Phát hành các bản nháp.*không giới hạn theo tìm kiếm/,
+    const list = dialog.getByRole("list", { name: "Danh sách đơn mua" });
+    expect(list).toHaveTextContent("Second supplier");
+    expect(list).toHaveTextContent("10/09/2026");
+    expect(list).not.toHaveTextContent(
+      /NCC An Phú|private-|second-order|second-revision/,
     );
+    expect(releaseAll).not.toHaveBeenCalled();
+    fireEvent.click(dialog.getByRole("button", { name: "Phát hành 1 đơn" }));
+    expect(releaseAll).toHaveBeenCalledWith([
+      fixture.orders.purchase_orders[1],
+    ]);
+    const scope = await screen.findByRole("combobox", {
+      name: "Phạm vi thao tác",
+    });
+    fireEvent.change(scope, { target: { value: "loaded" } });
+    fireEvent.click(screen.getByRole("button", { name: "Phát hành (2)" }));
+    const all = within(
+      await screen.findByRole("dialog", { name: "Đơn mua sẽ phát hành" }),
+    );
+    expect(all.getAllByRole("listitem")).toHaveLength(2);
+    expect(all.getByRole("list")).toHaveTextContent("NCC An Phú");
+    fireEvent.click(all.getByRole("button", { name: "Quay lại" }));
+    expect(releaseAll).toHaveBeenCalledTimes(1);
   });
   it("releases only eligible current drafts once, using each exact version and revision", async () => {
     const h = hook();
     await waitFor(() => expect(h.result.current.current).toBe(true));
     await act(async () => {
-      await h.result.current.releaseAllOrders();
+      await h.result.current.releaseAllOrders(h.reviewed());
     });
     expect(h.release.mock.calls.map(([r]) => r.payload)).toEqual([
       {
@@ -109,7 +133,7 @@ describe("Publish all loaded eligible POs", () => {
       2,
     );
     await act(async () => {
-      await h.result.current.releaseAllOrders();
+      await h.result.current.releaseAllOrders(h.reviewed());
     });
     expect(h.release).toHaveBeenCalledTimes(2);
     expect(h.result.current.feedback?.message).toContain("2/2");
@@ -125,7 +149,7 @@ describe("Publish all loaded eligible POs", () => {
       await waitFor(() => expect(h.result.current.current).toBe(true));
       h.release.mockResolvedValueOnce(failure);
       await act(async () => {
-        await h.result.current.releaseAllOrders();
+        await h.result.current.releaseAllOrders(h.reviewed());
       });
       expect(h.release).toHaveBeenCalledOnce();
       expect(h.result.current.feedback?.kind).not.toBe("success");
@@ -145,10 +169,10 @@ describe("Publish all loaded eligible POs", () => {
     );
     let pending!: Promise<void>;
     act(() => {
-      pending = h.result.current.releaseAllOrders();
+      pending = h.result.current.releaseAllOrders(h.reviewed());
     });
     await act(async () => {
-      await h.result.current.releaseAllOrders();
+      await h.result.current.releaseAllOrders(h.reviewed());
       await h.result.current.orderAction(h.fixture.orders.purchase_orders[1]!);
     });
     expect(h.release).toHaveBeenCalledOnce();
@@ -168,7 +192,7 @@ describe("Publish all loaded eligible POs", () => {
       "Prepare the complete current Supplier/date document set before release.";
     h.release.mockResolvedValueOnce(failure);
     await act(async () => {
-      await h.result.current.releaseAllOrders();
+      await h.result.current.releaseAllOrders(h.reviewed());
     });
     expect(h.release).toHaveBeenCalledOnce();
     expect(h.result.current.feedback?.kind).toBe("blocked");
@@ -189,7 +213,7 @@ describe("Publish all loaded eligible POs", () => {
       return response;
     });
     await act(async () => {
-      await h.result.current.releaseAllOrders();
+      await h.result.current.releaseAllOrders(h.reviewed());
     });
     expect(h.release).toHaveBeenCalledOnce();
     expect(h.result.current.feedback?.kind).toBe("stale");
@@ -215,7 +239,7 @@ describe("Publish all loaded eligible POs", () => {
     );
     let pending!: Promise<void>;
     act(() => {
-      pending = result.current.releaseAllOrders();
+      pending = result.current.releaseAllOrders(h.reviewed());
     });
     act(() => result.current.changeStage("allocation"));
     expect(result.current.stage).toBe("orders");

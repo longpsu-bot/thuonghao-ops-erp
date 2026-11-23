@@ -39,6 +39,28 @@ export type ProcurementFeedback = {
   message: string;
   messages: string[];
 };
+type DayPreparation = {
+  date: string;
+  ticket: number;
+  loading: boolean;
+  source: ConfirmedAllocationWorkbench["preparation"];
+  message: string | null;
+};
+
+function readyForPreparation(
+  source: ConfirmedAllocationWorkbench["preparation"] | undefined,
+  date: string,
+) {
+  return Boolean(
+    source?.service_date === date &&
+    source.ready === true &&
+    source.allowed === true &&
+    source.blockers?.length === 0 &&
+    source.confirmed_need_batch_id &&
+    Number.isInteger(source.expected_version) &&
+    source.expected_version > 0,
+  );
+}
 export type ProcurementControllerProps = {
   authSubject: string | null;
   purchaseReviewApi: PurchaseReviewApi;
@@ -166,6 +188,12 @@ export function useProcurementWorkbench({
     null,
   );
   const recoveryStage = useRef<ProcurementStage | null>(null);
+  const preparedDay = useRef<string | null>(null);
+  const returnAllocationRange = useRef<AtlasOperatorDateRange | null>(null);
+  const [dayPreparation, setDayPreparation] = useState<DayPreparation | null>(
+    null,
+  );
+  const dayRequest = useRef(0);
   const recoveryInvalidation = useRef(false);
   const skipPreparedStageRead = useRef(false);
 
@@ -174,10 +202,15 @@ export function useProcurementWorkbench({
     setHasRetry(false);
   };
   const read = useCallback(
-    async (target: ProcurementStage): Promise<boolean | null> => {
+    async (
+      target: ProcurementStage,
+      orderDate?: string | null,
+    ): Promise<boolean | null> => {
       if (operatorDateRangeError({ start: date, end: dateEnd })) return false;
       const readRevision = freshness.capture();
       const ticket = ++generation.current;
+      dayRequest.current += 1;
+      setDayPreparation(null);
       active.current = true;
       setCurrent(false);
       setLoading(true);
@@ -202,8 +235,8 @@ export function useProcurementWorkbench({
                 )
               : await procurementApi.getPurchaseOrders(
                   purchaseOrdersReadRequest(authSubject, correlation.current, {
-                    date_start: date,
-                    date_end: dateEnd,
+                    date_start: orderDate ?? date,
+                    date_end: orderDate ?? dateEnd,
                     supplier_ids: [],
                     statuses: [],
                     search: null,
@@ -221,7 +254,10 @@ export function useProcurementWorkbench({
         target === "orders" && result ? purchaseOrdersFromResult(result) : null;
       const nextOrders =
         rawOrders?.contract_version === "SCHOOL-CATERING-PROCUREMENT.v1" &&
-        Array.isArray(rawOrders.purchase_orders)
+        Array.isArray(rawOrders.purchase_orders) &&
+        (!orderDate ||
+          (rawOrders.date_start === orderDate &&
+            rawOrders.date_end === orderDate))
           ? rawOrders
           : null;
       const ok =
@@ -277,6 +313,9 @@ export function useProcurementWorkbench({
     active.current = false;
     clearRetry();
     recoveryStage.current = null;
+    preparedDay.current = null;
+    setDayPreparation(null);
+    dayRequest.current += 1;
     setCurrent(false);
     setAllocation(null);
     setOrders(null);
@@ -327,20 +366,36 @@ export function useProcurementWorkbench({
     if (bulkActive.current) return;
     if (!fixedStage && value !== stage) {
       invalidate();
+      if (value === "allocation" && returnAllocationRange.current) {
+        const prior = returnAllocationRange.current;
+        setDate(prior.start);
+        setDateEnd(prior.end);
+        setRange(prior);
+        returnAllocationRange.current = null;
+      }
       setStage(value);
     }
   };
   const enterOrdersAfterRead = async (readStage: ProcurementStage) => {
+    const targetDate = preparedDay.current ?? date;
     if (fixedStage === "allocation") {
       // Orders proof cannot make the retained Allocation snapshot current.
       recoveryStage.current = "allocation";
       if (readStage !== "allocation" && !(await read("allocation"))) return;
       recoveryStage.current = null;
-      onOpenOrders?.(date);
+      preparedDay.current = null;
+      onOpenOrders?.(targetDate);
       return;
     }
     recoveryStage.current = null;
     if (stage !== "orders") {
+      if (targetDate !== date || targetDate !== dateEnd) {
+        returnAllocationRange.current = { start: date, end: dateEnd };
+        setDate(targetDate);
+        setDateEnd(targetDate);
+        setRange({ start: targetDate, end: targetDate });
+      }
+      preparedDay.current = null;
       skipPreparedStageRead.current = true;
       setStage("orders");
     }
@@ -349,7 +404,10 @@ export function useProcurementWorkbench({
     if (active.current || bulkActive.current || rangeError) return;
     clearRetry();
     const target = recoveryStage.current ?? stage;
-    const ok = await read(target);
+    const ok = await read(
+      target,
+      target === "orders" ? preparedDay.current : null,
+    );
     if (ok) {
       if (recoveryInvalidation.current) {
         recoveryInvalidation.current = false;
@@ -401,7 +459,7 @@ export function useProcurementWorkbench({
     if (preparation && ["success", "unknown"].includes(nextFeedback.kind))
       recoveryStage.current = "orders";
     if (nextFeedback.kind === "success") {
-      const ok = await read(target);
+      const ok = await read(target, preparation ? preparedDay.current : null);
       if (ok === null) return false;
       if (!ok) {
         setFeedback(uncertain());
@@ -503,21 +561,98 @@ export function useProcurementWorkbench({
       );
     }
   };
-  const prepare = async (editing: boolean) => {
-    const source = allocation?.preparation;
+  const checkPreparationDay = async (targetDate: string, editing: boolean) => {
     if (
       !canStart() ||
       stage !== "allocation" ||
-      date !== dateEnd ||
       editing ||
-      !source?.ready ||
-      !source.allowed
+      date === dateEnd ||
+      operatorDateRangeError({ start: targetDate, end: targetDate }) ||
+      targetDate < date ||
+      targetDate > dateEnd
     )
       return;
+    const ticket = ++dayRequest.current;
+    const scopeTicket = generation.current;
+    const readRevision = freshness.capture();
+    const check = {
+      date: targetDate,
+      ticket,
+      loading: true,
+      source: null,
+      message: null,
+    };
+    setDayPreparation(check);
+    let result: AtlasRpcResult | null = null;
+    try {
+      result = await purchaseReviewApi.getConfirmedAllocations(
+        confirmedAllocationReadRequest(authSubject!, correlation.current, {
+          date_start: targetDate,
+          date_end: targetDate,
+          // Preparation covers the whole day even if the weekly table shows one school.
+          school_ids: [],
+          states: [],
+          search: null,
+        }),
+      );
+    } catch {
+      // This read made no change. Staff can check the day again.
+    }
+    if (
+      ticket !== dayRequest.current ||
+      scopeTicket !== generation.current ||
+      freshness.capture() !== readRevision
+    )
+      return;
+    const response = result && confirmedAllocationFromResult(result);
+    const day = response?.date_start === targetDate && response.date_end === targetDate
+      ? response : null;
+    // The backend can return just ready/allowed/blockers when the day has no single authorized batch.
+    const source = day?.preparation ?? null;
+    const blockers = [...(day?.blockers ?? []), ...(source?.blockers ?? [])];
+    const messages = procurementOperatorMessages(
+      blockers,
+      "Kiểm tra phân bổ trước khi chuẩn bị đơn mua.",
+    );
+    let message = messages.length ? messages.join(" ") : null;
+    if (!day)
+      message = result?.kind === "backend_error"
+        ? feedbackFromResult(result).message
+        : "Chưa tải được phân bổ của ngày này. Hãy kiểm tra lại.";
+    else if (!message && !readyForPreparation(source, targetDate))
+      message = source?.ready && !source.allowed
+        ? "Bạn chưa có quyền chuẩn bị đơn mua cho ngày này."
+        : "Chưa đủ dữ liệu để chuẩn bị đơn mua cho ngày này.";
+    setDayPreparation({
+      ...check,
+      loading: false,
+      source: message ? null : source,
+      message,
+    });
+  };
+  const preparationDate = date === dateEnd ? date : dayPreparation?.date;
+  const preparationSource =
+    date === dateEnd ? allocation?.preparation : dayPreparation?.source;
+  const canPrepare = Boolean(
+    preparationDate &&
+    readyForPreparation(preparationSource, preparationDate) &&
+    (date !== dateEnd || !allocation?.blockers.length),
+  );
+  const prepare = async (editing: boolean) => {
+    if (
+      !canStart() ||
+      stage !== "allocation" ||
+      editing ||
+      !canPrepare ||
+      !preparationSource ||
+      (date !== dateEnd && dayPreparation?.ticket !== dayRequest.current)
+    )
+      return;
+    preparedDay.current = preparationSource.service_date;
     const request = preparePurchaseOrdersRequest(
       authSubject!,
       correlation.current,
-      source,
+      preparationSource,
     );
     await runCommand(
       () => purchaseReviewApi.preparePurchaseOrders(request),
@@ -579,15 +714,13 @@ export function useProcurementWorkbench({
       );
     }
   };
-  const releaseAllOrders = async () => {
+  const releaseAllOrders = async (reviewed: SchoolCateringPurchaseOrder[]) => {
     if (!canStart() || stage !== "orders") return;
-    const eligible = (ordersAuthority.current?.purchase_orders ?? [])
-      .filter(canReleasePurchaseOrder)
-      .map((order) => ({
-        id: order.purchase_order_id,
-        version: order.version,
-        revision: order.current_revision.purchase_order_revision_id,
-      }));
+    const eligible = reviewed.filter(canReleasePurchaseOrder).map((order) => ({
+      id: order.purchase_order_id,
+      version: order.version,
+      revision: order.current_revision.purchase_order_revision_id,
+    }));
     if (!eligible.length) return;
     bulkActive.current = true;
     let completed = 0;
@@ -606,7 +739,7 @@ export function useProcurementWorkbench({
           setMutationLocked(true);
           setFeedback({
             kind: "stale",
-            message: `Đã phát hành ${completed}/${eligible.length} PO. Dữ liệu đơn tiếp theo đã thay đổi; tải lại và kiểm tra trước khi tiếp tục.`,
+            message: `Đã phát hành ${completed}/${eligible.length} đơn mua. Đơn tiếp theo đã thay đổi. Hãy tải lại và kiểm tra trước khi tiếp tục.`,
             messages: [],
           });
           return;
@@ -686,6 +819,9 @@ export function useProcurementWorkbench({
     openOrders,
     reload,
     save,
+    checkPreparationDay,
+    dayPreparation,
+    canPrepare,
     prepare,
     orderAction,
     releaseAllOrders,

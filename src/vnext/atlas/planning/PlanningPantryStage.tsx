@@ -20,6 +20,7 @@ import { atlasWorkbarControlHeight } from "../AtlasWorkbar";
 import { pantryIssueCopy } from "./pantryIssueCopy";
 import { compareCanonicalSchools } from "../canonicalSchoolOrder";
 import { WeeklyPantryRules } from "./WeeklyPantryRules";
+import { staffReference } from "../atlasStaffReference";
 
 function PantryFeedback({
   error,
@@ -388,6 +389,9 @@ function ManualPantryStage({
                         (i) => i.ingredient_id === r.ingredient_id,
                       );
                       const unit = ingredient?.purchase_unit.unit_name;
+                      const unitLabel =
+                        staffReference(ingredient?.purchase_unit.unit_code) ??
+                        unit;
                       const saved = c.pantryData?.batch?.active_lines.find(
                         (line) =>
                           line.source_row_reference === r.source_row_reference,
@@ -457,12 +461,12 @@ function ManualPantryStage({
                                   "Chọn nguyên liệu"
                                 }
                                 date={r.service_date}
-                                unit={ingredient?.purchase_unit.unit_code}
+                                unit={unitLabel}
                                 source={sourceLabel(r.pantry_need_purpose_id)}
                               />
                               <Text textStyle="helper" color="fg.muted" mb="xs">
                                 {saved
-                                  ? `Đã lưu${saved.ingredient_id !== r.ingredient_id ? ` ${saved.ingredient_name}` : ""}: ${saved.requested_quantity} ${saved.unit_code}`
+                                  ? `Đã lưu${saved.ingredient_id !== r.ingredient_id ? ` ${saved.ingredient_name}` : ""}: ${saved.requested_quantity} ${staffReference(saved.unit_code) ?? saved.unit_name}`
                                   : "Dòng mới · chưa lưu"}
                               </Text>
                               <Field.Root invalid={!!errors.quantity}>
@@ -484,7 +488,7 @@ function ManualPantryStage({
                                     }
                                   />
                                   <Text textStyle="unitInline">
-                                    {ingredient?.purchase_unit.unit_code}
+                                    {unitLabel}
                                   </Text>
                                 </Flex>
                                 <PantryFeedback error={errors.quantity} />

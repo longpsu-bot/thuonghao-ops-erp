@@ -1,5 +1,6 @@
 // One bounded connected journey on an explicitly disposable certification stack.
 import assert from "node:assert/strict";
+import { confirmReviewedOrders } from "./atlas-po-bulk-review-browser.mjs";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import {
   readFileSync,
@@ -622,7 +623,10 @@ try {
   );
   await until(() => click("Tiện ích đơn mua"), "OPEN_ORDER_UTILITIES");
   await until(
-    async () => (await text()).includes("Phát hành tất cả PO (2)"),
+    () =>
+      evaluate(
+        `Boolean(document.querySelector('[data-po-bulk-review="release"]:enabled'))`,
+      ),
     "CURRENT_DRAFTS",
   );
   before = await read();
@@ -662,11 +666,21 @@ try {
     async () => (await text()).includes("1 đơn mua đang hiển thị"),
     "FILTER",
   );
-  assert(
-    (await text()).includes("Phát hành tất cả PO (2)"),
-    "Search must not narrow the displayed release scope.",
+  assert.equal(
+    await evaluate(
+      `document.querySelector('select[aria-label="Phạm vi thao tác"]').value`,
+    ),
+    "visible",
   );
-  assert(await click("Phát hành tất cả PO (2)"));
+  await evaluate(
+    `(()=>{const scope=document.querySelector('select[aria-label="Phạm vi thao tác"]');scope.value='loaded';scope.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+  );
+  await confirmReviewedOrders({
+    evaluate,
+    until,
+    action: "release",
+    orders: before,
+  });
   await until(
     async () => (await text()).includes("Đã phát hành 2/2 PO."),
     "BULK_RELEASE",
@@ -714,20 +728,31 @@ try {
   await until(async () => {
     const body = await text();
     return (
-      body.includes("Phát hành tất cả PO (0)") &&
-      numbers.every((n) => body.includes(n))
+      (await evaluate(
+        `Boolean(document.querySelector('[data-po-bulk-review="release"]:disabled'))`,
+      )) && numbers.every((n) => body.includes(n))
     );
   }, "PERSISTED_RELOAD");
   assert.deepEqual(
     (await read()).map((o) => o.document_number).sort(),
     numbers,
   );
-  assert(await click("Xuất XLSX"));
+  await confirmReviewedOrders({
+    evaluate,
+    until,
+    action: "xlsx",
+    orders: after,
+  });
   await until(
     async () => readdirSync(evidence).some((n) => /\.zip$/i.test(n)),
     "XLSX_EXPORT",
   );
-  await until(() => click("Xuất PDF"), "PDF_EXPORT_READY");
+  await confirmReviewedOrders({
+    evaluate,
+    until,
+    action: "pdf",
+    orders: after,
+  });
   await until(
     async () =>
       readdirSync(evidence).filter((n) => /\.zip$/i.test(n)).length === 2,
