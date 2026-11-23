@@ -9,7 +9,7 @@ where r.rolname in ('atlas_owner', 'atlas_planning_materialization_runtime', 'at
 grant select on need_rounding_leases to atlas_owner;
 grant atlas_owner, atlas_planning_materialization_runtime, atlas_confirmed_need_review_runtime to postgres with set true;
 
-create function pg_temp.patch_need_rounding(target regprocedure, anchor text, replacement text, occurrences integer default 1)
+create function pg_temp.patch_unit_need_rounding(target regprocedure, anchor text, replacement text, occurrences integer default 1)
 returns void language plpgsql as $$
 declare definition text := replace(pg_get_functiondef(target), E'\r\n', E'\n');
 begin
@@ -57,10 +57,10 @@ set role atlas_planning_materialization_runtime;
 do $migration$
 declare writer constant regprocedure := 'atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)';
 begin
-  perform pg_temp.patch_need_rounding(writer, '      proposal_whole_round_from
+  perform pg_temp.patch_unit_need_rounding(writer, '      proposal_whole_round_from
     ) values', '      proposal_whole_round_from, proposal_kg_unit_ids
     ) values');
-  perform pg_temp.patch_need_rounding(writer,
+  perform pg_temp.patch_unit_need_rounding(writer,
     '      atlas_core.new_need_whole_round_from()
     ) returning confirmed_need_batch_id, proposal_whole_round_from into v_batch_id, v_batch.proposal_whole_round_from;',
     $new$      atlas_core.new_need_whole_round_from(),
@@ -70,8 +70,8 @@ begin
         order by unit_id)
     ) returning confirmed_need_batch_id, proposal_whole_round_from, proposal_kg_unit_ids
       into v_batch_id, v_batch.proposal_whole_round_from, v_batch.proposal_kg_unit_ids;$new$);
-  perform pg_temp.patch_need_rounding(writer, 'atlas_core.planning_need_proposal(', 'atlas_core.unit_need_proposal(', 2);
-  perform pg_temp.patch_need_rounding(writer,
+  perform pg_temp.patch_unit_need_rounding(writer, 'atlas_core.planning_need_proposal(', 'atlas_core.unit_need_proposal(', 2);
+  perform pg_temp.patch_unit_need_rounding(writer,
     'v_batch.proposal_whole_round_from, proposal.confirmation_step)',
     'v_batch.proposal_whole_round_from, target_line.controlled_unit_id = any(v_batch.proposal_kg_unit_ids), proposal.confirmation_step)', 2);
 end $migration$;
@@ -81,14 +81,14 @@ set role atlas_confirmed_need_review_runtime;
 do $migration$
 declare reader constant regprocedure := 'atlas_core.rmvp_05_workbench_payload(uuid,jsonb,integer,integer)';
 begin
-  perform pg_temp.patch_need_rounding(reader, 'atlas_core.planning_need_proposal(revision.theoretical_quantity,
+  perform pg_temp.patch_unit_need_rounding(reader, 'atlas_core.planning_need_proposal(revision.theoretical_quantity,
           revision.proposal_rounding_step, b.proposal_whole_round_from)',
     'atlas_core.unit_need_proposal(revision.theoretical_quantity,
           revision.proposal_rounding_step, b.proposal_whole_round_from, l.controlled_unit_id = any(b.proposal_kg_unit_ids))');
-  perform pg_temp.patch_need_rounding(reader, '      b.proposal_whole_round_from,',
+  perform pg_temp.patch_unit_need_rounding(reader, '      b.proposal_whole_round_from,',
     '      b.proposal_whole_round_from,
       l.controlled_unit_id = any(b.proposal_kg_unit_ids) as proposal_is_kilogram,');
-  perform pg_temp.patch_need_rounding(reader, $old$'proposal_whole_round_from', line.proposal_whole_round_from::text,$old$,
+  perform pg_temp.patch_unit_need_rounding(reader, $old$'proposal_whole_round_from', line.proposal_whole_round_from::text,$old$,
     $new$'proposal_whole_round_from', line.proposal_whole_round_from::text,
               'proposal_is_kilogram', line.proposal_is_kilogram,$new$);
 end $migration$;
