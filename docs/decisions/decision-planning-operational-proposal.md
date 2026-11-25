@@ -9,7 +9,9 @@
 
 ## Quy tắc hiện hành và cách thay đổi (23/11/2026)
 
-Với phiếu lập mới, Atlas cộng lượng gốc của các nguồn có cùng ngày, trường, điểm giao, nguyên liệu và đơn vị. Atlas làm tròn lên tổng của từng dòng một lần. Lượng đã đúng nấc giữ nguyên, kể cả số 0.
+**Nhu cầu theo định mức.** Với mỗi món trong thực đơn, Atlas tính lượng nguyên liệu theo công thức có hiệu lực và số suất. Các món dùng chung nguyên liệu được cộng lại theo ngày, trường, điểm giao và đơn vị. Hàng đặt riêng, nếu có, là một nguồn bổ sung có thể tra riêng. Atlas lưu tổng gốc với đầy đủ độ chính xác trong **Xác nhận nhu cầu → Xem cách hình thành nhu cầu**.
+
+**Đề xuất vận hành.** Atlas lấy tổng gốc của từng dòng và làm tròn lên một lần theo nấc áp dụng cho mặt hàng. Lượng đã đúng nấc giữ nguyên, kể cả số 0. Thay đổi bước làm tròn chỉ ảnh hưởng cách lập đề xuất cho phiếu mới. Định mức món và số lượng gốc vẫn truy được theo nguồn.
 
 | Dòng nhu cầu                             | Nấc áp dụng                                                    | Ví dụ                                                                   |
 | ---------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -27,7 +29,7 @@ Với phiếu lập mới, Atlas cộng lượng gốc của các nguồn có c�
 
 ### Cân giao cho trường và mua theo quy cách
 
-Số gốc là lượng bếp cần theo định mức. Cột **Đề xuất vận hành** cho biết lượng cân giao cho từng trường, điểm giao và ngày sau khi cộng các món. Ví dụ, hai món cùng dùng 0,06 kg hành lá ở một điểm giao thì tổng gốc là 0,12 kg và lượng đề xuất là 0,2 kg. Nhân viên có thể xác nhận một lượng khác. Khi xuất **Phiếu đi chợ**, Excel ghi đúng lượng đã xác nhận, kể cả phần lẻ.
+**Từ định mức đến đơn đặt.** Ví dụ, công thức và số suất cho ra đúng 2,26 kg hành lá tại một trường. Lượng gốc là 2,26 kg. Cột **Đề xuất vận hành** hiển thị 2,5 kg theo nấc rau nêm. Nhân viên xem tình hình thực tế rồi chốt **Số lượng xác nhận**. Nếu chốt 2,5 kg thì Phiếu đi chợ ghi đúng 2,5 kg. Nếu điều chỉnh, phiếu xuất ghi đúng số đã lưu. Lượng chốt là căn cứ phân bổ nhà cung cấp; lượng đặt thực tế với từng nhà cung cấp được ghi trên đơn mua phát hành.
 
 Với nguyên liệu mua theo kg và cân giao theo lạng, bước 0,1 kg dùng được ở bước lập nhu cầu. Với hàng giao nguyên hộp, đơn vị giao là hộp và bước giao có thể là một hộp. Riêng hàng mua nguyên gói rồi mở ra chia cho nhiều trường cần ghi rõ cả lượng cân giao lẫn khối lượng mỗi gói. Tên nguyên liệu hoặc đơn vị “Gói” trong danh mục chưa đủ để suy ra một gói nặng bao nhiêu kg.
 
