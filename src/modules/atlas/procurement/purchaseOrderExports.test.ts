@@ -11,6 +11,46 @@ import {
 } from "./purchaseOrderExports";
 
 describe("released purchase-order exports", () => {
+  it("keeps each school's packing quantity when three schools share one delivery location", async () => {
+    const order =
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
+    const line = order.lines[0]!;
+    order.lines = [line];
+    line.ordered_quantity = "0.900000";
+    const schools = ["Trường A", "Trường B", "Trường C"];
+    line.school_breakdown = schools.map((schoolName, index) => ({
+      ...line.school_breakdown[0]!,
+      school_id: `school-${index}`,
+      school_name: schoolName,
+      school_display_order: index + 1,
+      ordered_quantity: "0.300000",
+    }));
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(
+      await createPurchaseOrderXlsx(order, "details_school"),
+    );
+    const sheet = workbook.worksheets.find((s) =>
+      s.name.endsWith("Theo trường"),
+    )!;
+    const packingRows: [string, string][] = [];
+    sheet.eachRow((row, rowNumber) => {
+      if (row.getCell(3).text === "Gạo thơm")
+        packingRows.push([
+          sheet.getRow(rowNumber - 1).getCell(1).text,
+          row.getCell(5).text,
+        ]);
+    });
+    expect(packingRows).toHaveLength(schools.length);
+    schools.forEach((name, i) => {
+      expect(packingRows[i]![0]).toContain(name);
+      expect(Number(packingRows[i]![1].replace(",", "."))).toBe(0.3);
+    });
+    expect(
+      buildPurchaseOrderExportData(order).summaryLines[0]!.orderedQuantity,
+    ).toBe("0.900000");
+  });
+
   it("keeps the summary issuer clear of its logo and gives wrapped date labels two full lines", async () => {
     const order =
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;

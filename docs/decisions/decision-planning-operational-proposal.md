@@ -9,7 +9,9 @@
 
 ## Quy tắc hiện hành và cách thay đổi (23/11/2026)
 
-Với phiếu lập mới, Atlas cộng lượng gốc của các nguồn có cùng ngày, trường, điểm giao, nguyên liệu và đơn vị. Atlas làm tròn lên tổng của từng dòng một lần. Lượng đã đúng nấc giữ nguyên, kể cả số 0.
+**Nhu cầu theo định mức.** Với mỗi món trong thực đơn, Atlas tính lượng nguyên liệu theo công thức có hiệu lực và số suất. Các món dùng chung nguyên liệu được cộng lại theo ngày, trường, điểm giao và đơn vị. Hàng đặt riêng, nếu có, là một nguồn bổ sung có thể tra riêng. Atlas lưu tổng gốc với đầy đủ độ chính xác trong **Xác nhận nhu cầu → Xem cách hình thành nhu cầu**.
+
+**Đề xuất vận hành.** Atlas lấy tổng gốc của từng dòng và làm tròn lên một lần theo nấc áp dụng cho mặt hàng. Lượng đã đúng nấc giữ nguyên, kể cả số 0. Thay đổi bước làm tròn chỉ ảnh hưởng cách lập đề xuất cho phiếu mới. Định mức món và số lượng gốc vẫn truy được theo nguồn.
 
 | Dòng nhu cầu                             | Nấc áp dụng                                                    | Ví dụ                                                                   |
 | ---------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -24,6 +26,14 @@ Với phiếu lập mới, Atlas cộng lượng gốc của các nguồn có c�
 **Kiểm tra khi thay đổi.** Chạy [bộ kiểm thử đề xuất nhu cầu](../../supabase/tests/planning_operational_proposal.sql) cho lượng bằng 0, dưới ngưỡng, đúng ngưỡng, trên ngưỡng, số đã đúng nấc, nguyên liệu thường và đọc lại phiếu cũ. Kiểm tra Đề xuất và Đã lưu trên phiếu mới. Phiếu đi chợ xuất số đã xác nhận, kể cả khi nhân viên đã điều chỉnh. Bước xác nhận theo đơn vị vẫn áp dụng cho số đã lưu.
 
 **Lịch sử và khôi phục.** Phiếu lập trước thay đổi giữ công thức tại thời điểm lập, kể cả khi đọc lại hoặc sửa trong cùng phiếu. Phiếu ngày 13/11/2026 đã thử trên Staging dùng quy tắc v1 cũ, trong đó 2,26 kg hành lá được đề xuất 2 kg. Các phiên bản trước đó dùng ngưỡng sau bước nguyên liệu hoặc chỉ làm tròn lên theo bước nguyên liệu. Khi cần quay lại chính sách trước, dùng migration mới để chọn chính sách đó cho phiếu lập tiếp theo và giữ dữ liệu, công thức đọc của các phiếu đã lập.
+
+### Chốt lượng và đóng gói theo từng trường
+
+**Từ định mức đến đơn đặt.** Ví dụ, công thức và số suất cho ra đúng 2,26 kg hành lá tại một trường. Lượng gốc là 2,26 kg. Cột **Đề xuất vận hành** hiển thị 2,5 kg theo nấc rau nêm. Nhân viên xem tình hình thực tế rồi chốt **Số lượng xác nhận**. Nếu chốt 2,5 kg thì Phiếu đi chợ ghi đúng 2,5 kg. Nếu điều chỉnh, phiếu xuất ghi đúng số đã lưu. Lượng chốt là căn cứ phân bổ nhà cung cấp; lượng đặt thực tế với từng nhà cung cấp được ghi trên đơn mua phát hành.
+
+Nhà cung cấp đóng gói riêng theo trường và ghi tên trường, số lượng thực tế trên từng gói. Khi nhiều trường đặt cùng mặt hàng, Atlas giữ riêng phần của từng trường và điểm giao, kể cả khi các trường dùng chung bếp. Nếu chia một mặt hàng cho nhiều nhà cung cấp, mỗi nhà cung cấp dùng phần được phân bổ cho mình.
+
+Ví dụ, trường A, B và C cùng chốt 0,3 kg của một mặt hàng từ cùng nhà cung cấp trong ngày. Chi tiết **Theo trường** trên đơn mua ghi A 0,3 kg, B 0,3 kg và C 0,3 kg. Nhà cung cấp đóng riêng và dán nhãn tương ứng cho từng trường. Bảng tổng hợp của đơn ghi 0,9 kg để đối chiếu. Atlas không cộng lượng các trường rồi làm tròn lên một gói chung. [Quy định chi tiết theo trường trên đơn mua](../api/school-catering-procurement.md)
 
 ## Original decision (23 September 2026)
 
