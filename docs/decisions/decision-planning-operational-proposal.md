@@ -27,15 +27,13 @@
 
 **Lịch sử và khôi phục.** Phiếu lập trước thay đổi giữ công thức tại thời điểm lập, kể cả khi đọc lại hoặc sửa trong cùng phiếu. Phiếu ngày 13/11/2026 đã thử trên Staging dùng quy tắc v1 cũ, trong đó 2,26 kg hành lá được đề xuất 2 kg. Các phiên bản trước đó dùng ngưỡng sau bước nguyên liệu hoặc chỉ làm tròn lên theo bước nguyên liệu. Khi cần quay lại chính sách trước, dùng migration mới để chọn chính sách đó cho phiếu lập tiếp theo và giữ dữ liệu, công thức đọc của các phiếu đã lập.
 
-### Cân giao cho trường và mua theo quy cách
+### Chốt lượng và đóng gói theo từng trường
 
 **Từ định mức đến đơn đặt.** Ví dụ, công thức và số suất cho ra đúng 2,26 kg hành lá tại một trường. Lượng gốc là 2,26 kg. Cột **Đề xuất vận hành** hiển thị 2,5 kg theo nấc rau nêm. Nhân viên xem tình hình thực tế rồi chốt **Số lượng xác nhận**. Nếu chốt 2,5 kg thì Phiếu đi chợ ghi đúng 2,5 kg. Nếu điều chỉnh, phiếu xuất ghi đúng số đã lưu. Lượng chốt là căn cứ phân bổ nhà cung cấp; lượng đặt thực tế với từng nhà cung cấp được ghi trên đơn mua phát hành.
 
-Với nguyên liệu mua theo kg và cân giao theo lạng, bước 0,1 kg dùng được ở bước lập nhu cầu. Với hàng giao nguyên hộp, đơn vị giao là hộp và bước giao có thể là một hộp. Riêng hàng mua nguyên gói rồi mở ra chia cho nhiều trường cần ghi rõ cả lượng cân giao lẫn khối lượng mỗi gói. Tên nguyên liệu hoặc đơn vị “Gói” trong danh mục chưa đủ để suy ra một gói nặng bao nhiêu kg.
+Nhà cung cấp đóng gói riêng theo trường và ghi tên trường, số lượng thực tế trên từng gói. Khi nhiều trường đặt cùng mặt hàng, Atlas giữ riêng phần của từng trường và điểm giao, kể cả khi các trường dùng chung bếp. Nếu chia một mặt hàng cho nhiều nhà cung cấp, mỗi nhà cung cấp dùng phần được phân bổ cho mình.
 
-Ví dụ nghiệp vụ: ba trường đã chốt 0,3 kg mỗi trường, cùng nguyên liệu, ngày và nhà cung cấp. Phiếu đi chợ và phiếu giao của từng trường ghi 0,3 kg. Nếu nhà cung cấp chỉ bán gói 1 kg thì tổng cần giao là 0,9 kg, lượng cần đặt là 1 kg và phần dư do quy cách là 0,1 kg. Mỗi nhà cung cấp thực hiện đơn riêng nên phần gom để tính số gói cũng phải theo từng nhà cung cấp.
-
-**Phạm vi hiện hành.** Atlas đã áp dụng các nấc cân giao nêu trên và xuất Excel theo lượng đã lưu. Khi phát hành đơn mua, [hợp đồng Đơn mua](../api/school-catering-procurement.md) hiện yêu cầu tổng giao các trường bằng lượng đặt. Ví dụ mua nguyên gói có phần dư là yêu cầu cho bước mua hàng; thay bước của nguyên liệu thành 1 kg trên màn hình nhu cầu sẽ làm sai cả ba dòng giao.
+Ví dụ, trường A, B và C cùng chốt 0,3 kg của một mặt hàng từ cùng nhà cung cấp trong ngày. Chi tiết **Theo trường** trên đơn mua ghi A 0,3 kg, B 0,3 kg và C 0,3 kg. Nhà cung cấp đóng riêng và dán nhãn tương ứng cho từng trường. Bảng tổng hợp của đơn ghi 0,9 kg để đối chiếu. Atlas không cộng lượng các trường rồi làm tròn lên một gói chung. [Quy định chi tiết theo trường trên đơn mua](../api/school-catering-procurement.md)
 
 ## Original decision (23 September 2026)
 
