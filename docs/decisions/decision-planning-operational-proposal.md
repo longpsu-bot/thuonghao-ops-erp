@@ -25,6 +25,16 @@ Với phiếu lập mới, Atlas cộng lượng gốc của các nguồn có c�
 
 **Lịch sử và khôi phục.** Phiếu lập trước thay đổi giữ công thức tại thời điểm lập, kể cả khi đọc lại hoặc sửa trong cùng phiếu. Phiếu ngày 13/11/2026 đã thử trên Staging dùng quy tắc v1 cũ, trong đó 2,26 kg hành lá được đề xuất 2 kg. Các phiên bản trước đó dùng ngưỡng sau bước nguyên liệu hoặc chỉ làm tròn lên theo bước nguyên liệu. Khi cần quay lại chính sách trước, dùng migration mới để chọn chính sách đó cho phiếu lập tiếp theo và giữ dữ liệu, công thức đọc của các phiếu đã lập.
 
+### Cân giao cho trường và mua theo quy cách
+
+Số gốc là lượng bếp cần theo định mức. Cột **Đề xuất vận hành** cho biết lượng cân giao cho từng trường, điểm giao và ngày sau khi cộng các món. Ví dụ, hai món cùng dùng 0,06 kg hành lá ở một điểm giao thì tổng gốc là 0,12 kg và lượng đề xuất là 0,2 kg. Nhân viên có thể xác nhận một lượng khác. Khi xuất **Phiếu đi chợ**, Excel ghi đúng lượng đã xác nhận, kể cả phần lẻ.
+
+Với nguyên liệu mua theo kg và cân giao theo lạng, bước 0,1 kg dùng được ở bước lập nhu cầu. Với hàng giao nguyên hộp, đơn vị giao là hộp và bước giao có thể là một hộp. Riêng hàng mua nguyên gói rồi mở ra chia cho nhiều trường cần ghi rõ cả lượng cân giao lẫn khối lượng mỗi gói. Tên nguyên liệu hoặc đơn vị “Gói” trong danh mục chưa đủ để suy ra một gói nặng bao nhiêu kg.
+
+Ví dụ nghiệp vụ: ba trường đã chốt 0,3 kg mỗi trường, cùng nguyên liệu, ngày và nhà cung cấp. Phiếu đi chợ và phiếu giao của từng trường ghi 0,3 kg. Nếu nhà cung cấp chỉ bán gói 1 kg thì tổng cần giao là 0,9 kg, lượng cần đặt là 1 kg và phần dư do quy cách là 0,1 kg. Mỗi nhà cung cấp thực hiện đơn riêng nên phần gom để tính số gói cũng phải theo từng nhà cung cấp.
+
+**Phạm vi hiện hành.** Atlas đã áp dụng các nấc cân giao nêu trên và xuất Excel theo lượng đã lưu. Khi phát hành đơn mua, [hợp đồng Đơn mua](../api/school-catering-procurement.md) hiện yêu cầu tổng giao các trường bằng lượng đặt. Ví dụ mua nguyên gói có phần dư là yêu cầu cho bước mua hàng; thay bước của nguyên liệu thành 1 kg trên màn hình nhu cầu sẽ làm sai cả ba dòng giao.
+
 ## Original decision (23 September 2026)
 
 Atlas keeps three quantity meanings distinct in school-catering Confirmed Need:
